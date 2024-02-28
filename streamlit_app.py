@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
-from constants import HIDE_SIDEBAR_HTML, DISPLAY_SIDEBAR_HTML, HIDE_STREAMLIT_STYLE
+from constants import HIDE_SIDEBAR_HTML, DISPLAY_SIDEBAR_HTML, HIDE_STREAMLIT_ELEMENTS
 
 # Set page configuration (only this page is affected by this configuration)
 st.set_page_config(
@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # Hide Streamlit main menu, header and footer
-st.markdown(HIDE_STREAMLIT_STYLE, unsafe_allow_html=True)
+st.markdown(HIDE_STREAMLIT_ELEMENTS, unsafe_allow_html=True)
 
 # Hide expandable menu
 st.markdown(HIDE_SIDEBAR_HTML, unsafe_allow_html=True)
@@ -49,14 +49,7 @@ if st.session_state["authentication_status"]:
 
     # ---- MAIN PAGE ----
     st.title("Email to Quote - Streamlit App 📧➡️💰")
-    st.markdown("""
-    ---
-    ⬅️ Use the sidebar to navigate through the app.
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna 
-    aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur 
-    sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-    """)
+    st.markdown(open("markdowns/main-page-description.md", encoding="utf8").read())
 
     # ---- TABS ----
     zero_shot_prompting_tab, few_shot_prompting_tab, ner_zero_shot_prompting, ner_few_shot_prompting, rag = st.tabs([
@@ -69,12 +62,23 @@ if st.session_state["authentication_status"]:
 
     with zero_shot_prompting_tab:
         st.header("Zero-shot Prompting 0️⃣🔫")
-        st.markdown("""
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna 
-        aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur 
-        sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-        """)
+
+        with st.expander("See example"):
+            st.markdown(open("markdowns/zero-shot-prompting-description.md", encoding="utf8").read())
+
+        with st.form("zero_shot_prompting_form"):
+            st.header("Try Zero-shot Prompting")
+            user_input = st.text_input(
+                label="Enter your prompt here:",
+                value="Some example email."
+            )
+            submitted = st.form_submit_button(
+                label="Sent prompt to model 🚀",
+                disabled=True
+            )
+
+            if submitted:
+                st.write("You entered:", user_input)
 
     with few_shot_prompting_tab:
         st.header("Few-shot Prompting 3️⃣🔫")

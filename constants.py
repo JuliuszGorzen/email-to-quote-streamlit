@@ -14,7 +14,7 @@ DISPLAY_SIDEBAR_HTML = """
 </style>
 """
 
-HIDE_STREAMLIT_STYLE = """
+HIDE_STREAMLIT_ELEMENTS = """
 <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
