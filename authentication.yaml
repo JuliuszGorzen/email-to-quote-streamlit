@@ -1,0 +1,14 @@
+credentials:
+  usernames:
+    gen-ai:
+      email: generative-ai-ug@trimble.com
+      logged_in: False
+      name: Generative AI User
+      password: $2b$12$OHWQbZ67ItYslK/dnv8xX.Bx5BCDIrq2YVe7Ma9p6xeaCRNgJ5V36
+cookie:
+  expiry_days: 7
+  key: MJXEdgpQ2K
+  name: streamlit_email_to_quote
+preauthorized:
+  emails:
+    - juliusz.gorzen@trimble.com
