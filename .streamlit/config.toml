@@ -1,0 +1,15 @@
+[theme]
+base="dark"
+primaryColor="#f6c321"
+font="monospace"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+maxUploadSize = 20
+
+# Max size, in megabytes, of messages that can be sent via the WebSocket
+# connection.
+# Default: 200
+maxMessageSize = 20

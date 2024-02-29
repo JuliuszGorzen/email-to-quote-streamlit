@@ -1,5 +1,3 @@
-### Start here ⬇️
-
 Here you will find the approaches that we consider to be the most promising for the *Email to Quote* project.
 
 **Tabs:**
@@ -14,7 +12,7 @@ Each filed is described in the form, so you can easily fill it in.
 
 **Login:**
 
-Once you login the credentials will be stored in the cookie for 7 days, so you don't have to login every time you visit
+Once you log in the credentials will be stored in the cookie for 7 days, so you don't have to login every time you visit
 the app.
 
 The source code of the app is available on
