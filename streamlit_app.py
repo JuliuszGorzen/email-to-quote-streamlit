@@ -1,37 +1,26 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
+from langchain.globals import set_debug
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import AzureChatOpenAI
 from yaml.loader import SafeLoader
 
-from constants import HIDE_SIDEBAR_HTML, DISPLAY_SIDEBAR_HTML, HIDE_STREAMLIT_ELEMENTS
+import constants
 
 
 def main():
     # Set page configuration
     create_page_config()
 
-    # Hide Streamlit main menu, header and footer
-    st.markdown(HIDE_STREAMLIT_ELEMENTS, unsafe_allow_html=True)
+    set_debug(True)
 
-    # Hide expandable menu
-    st.markdown(HIDE_SIDEBAR_HTML, unsafe_allow_html=True)
+    remove_unused_html()
 
-    # Load authentication credentials from .yaml file
-    with open('authentication.yaml') as file:
-        config = yaml.load(file, Loader=SafeLoader)
+    authenticator = create_authenticator()
 
-    # create an instance of the Authenticate class with the credentials
-    authenticator = stauth.Authenticate(
-        config['credentials'],
-        config['cookie']['name'],
-        config['cookie']['key'],
-        config['cookie']['expiry_days'],
-        config['preauthorized']
-    )
-
-    # Add login form
+    # Add login page/form
     authenticator.login(fields={
         "Form name": "Login :closed_lock_with_key:",
         "Username": "username",
@@ -41,7 +30,7 @@ def main():
 
     if st.session_state["authentication_status"]:
         # Display expandable menu
-        st.markdown(DISPLAY_SIDEBAR_HTML, unsafe_allow_html=True)
+        st.markdown(constants.DISPLAY_SIDEBAR_HTML, unsafe_allow_html=True)
 
         # Add a logout button
         authenticator.logout(
@@ -74,131 +63,44 @@ def main():
 
             with st.form("zero_shot_prompting_form"):
                 st.header("Try Zero-shot Prompting")
-                user_input_val = st.text_area(
-                    label="Enter email here:",
-                    placeholder="""Hello,
-Please send me your offer for groupage transport for:
-1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
-Loading: 300283 Timisoara, Romania
-Unloading: 4715-405 Braga, Portugal
-Can be picked up. Payment after 7 days"""
+                system_message = st.text_area(
+                    label="Enter system message:",
+                    value=constants.ZERO_SHOT_PROMPT_SYSTEM_MESSAGE,
+                    placeholder=constants.ZERO_SHOT_PROMPT_SYSTEM_MESSAGE,
+                    height=200
                 )
-                prompt_val = st.text_area(
-                    label="Enter your prompt here:",
-                    placeholder="""System:
-You are a bot that extract data from emails in different languages. Below are the rules that you have to follow:
-- You can only write valid JSONs based on the documentation below:
-
-{"from_address": "string", "to_address": "string"}
-
-- Your goal is to transform email input into structured JSON. Comments are not allowed in the JSON. Text outside the 
-JSON is strictly forbidden.
-- Users provide the email freight orders as input, which you will transform into JSON format given the JSON 
-documentation.
-- You can enhance the output with general common-knowledge facts about the world relevant to the procurement event.
-- If you cannot find a piece of information, you can leave the corresponding attribute as "".
-
-User:
-{email}
-
-Assistant:"""
+                human_message = st.text_area(
+                    label="Enter human message:",
+                    value=constants.ZERO_SHOT_PROMPT_HUMAN_MESSAGE,
+                    placeholder=constants.ZERO_SHOT_PROMPT_HUMAN_MESSAGE,
+                    height=200
                 )
                 submitted = st.form_submit_button(label="Sent prompt to model :rocket:")
 
                 if submitted:
-                    if user_input_val == "":
-                        user_input_val = """Hello,
-Please send me your offer for groupage transport for:
-1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
-Loading: 300283 Timisoara, Romania
-Unloading: 4715-405 Braga, Portugal
-Can be picked up. Payment after 7 days"""
-                    if prompt_val == "":
-                        prompt_val = """System:
-You are a bot that extract data from emails in different languages. Below are the rules that you have to follow:
-- You can only write valid JSONs based on the documentation below:
-```
-("from_address": "string", "to_address": "string")
-```
-- Your goal is to transform email input into structured JSON. Comments are not allowed in the JSON. Text outside the JSON is strictly forbidden.
-- Users provide the email freight orders as input, which you will transform into JSON format given the JSON documentation.
-- You can enhance the output with general common-knowledge facts about the world relevant to the procurement event.
-- If you cannot find a piece of information, you can leave the corresponding attribute as "".
-
-User:
-"
-FROM: Juliusz Gorzen
-RECEIVED: 2024-01-31 10:10:10.299064
-
-Hi,
-
-I would like to book a FTL transport from Safranberg 123, 12345 Ulm to
-Wietrzna 34, Wroclaw 52-023, Poland next Monday.
-
-Thanks.
-
-Sincerely,
-Juliusz
-"
-
-Assistant:
-(from_address": "Safranberg 123, 12345 Ulm", "to_address": "Wietrzna 34, Wroclaw 52-023, Poland")
-
-User:
-"
-FROM: Abc def
-RECEIVED: 2024-01-31 10:10:10.299064
-
-Hi,
-
-I would like to book a magic transport from 3486 Tuna Street, 48302, Bloomfield Township to
-1011 Franklin Avenue, Daytona Beach 32114, US on 2024-03-03 10 pm.
-
-Thanks you.
-
-BR,
-Abc
-"
-
-Assistant:
-("from_address": "3486 Tuna Street, 48302, Bloomfield Township", "to_address": "1011 Franklin Avenue, Daytona Beach 32114, US")
-
-User: 
-"
-FROM: John Taylor
-RECEIVED: 2024-01-31 10:10:10.299064
-
-Hi,
-
-Pleas book the transport.
-From: 2132 Thomas Street, Wheeling, US
-To: -
-Date: 2024-02-11 09:30
-"
-
-Assistant:
-("from_address": "2132 Thomas Street, Wheeling, US", "to_address": "")
-
-User:
-{email}
-
-Assistant:"""
+                    if system_message == "" or human_message == "":
+                        st.warning("Please enter system or/and human message. Or copy from the example above.")
+                        st.stop()
                     llm = AzureChatOpenAI(
                         azure_endpoint="https://open-ai-resource-gen-ai.openai.azure.com/",
                         openai_api_version="2023-07-01-preview",
-                        openai_api_key="",
+                        openai_api_key="0ad6d1ef651c401e98e71ad72fa712ec",
                         openai_api_type="azure",
                         deployment_name="gpt-35-dev",
                         model_name="gpt-35-turbo",
                         model_version="0613",
-                        temperature=0.4
+                        temperature=0.2
                     )
-                    prompt = ChatPromptTemplate.from_template(prompt_val)
+                    prompt = ChatPromptTemplate.from_messages([
+                        SystemMessage(system_message),
+                        HumanMessage(human_message)
+                    ])
 
                     chain = prompt | llm
 
                     with st.spinner('Generating response...'):
-                        response = chain.invoke({"email": user_input_val})
+                        response = chain.invoke({})
+
                     st.toast('Done!', icon='😍')
                     st.markdown("#### Bot response:")
                     st.text(response.content)
@@ -362,6 +264,7 @@ Assistant:"""
     elif st.session_state["authentication_status"] is False:
         # Display an error message if the user enters the wrong credentials
         st.error('Username or/and password is incorrect. Try again.')
+
     elif st.session_state["authentication_status"] is None:
         # Display a warning message if the user does not enter the credentials/leaves the fields empty
         st.warning('Please enter your username and password.')
@@ -373,6 +276,28 @@ def create_page_config():
         page_icon="📧",
         layout="wide",
         initial_sidebar_state="collapsed"
+    )
+
+
+def remove_unused_html():
+    # Hide Streamlit main menu, header and footer
+    st.markdown(constants.HIDE_STREAMLIT_ELEMENTS, unsafe_allow_html=True)
+    # Hide expandable menu
+    st.markdown(constants.HIDE_SIDEBAR_HTML, unsafe_allow_html=True)
+
+
+def create_authenticator():
+    # Load authentication credentials from .yaml file
+    with open('authentication.yaml') as file:
+        config = yaml.load(file, Loader=SafeLoader)
+
+    # create an instance of the Authenticate class with the credentials
+    return stauth.Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days'],
+        config['preauthorized']
     )
 
 

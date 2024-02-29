@@ -1,18 +1,6 @@
-*User input - {{ email }}*
+*System message*
 
 ```text
-Hello,
-Please send me your offer for groupage transport for:
-1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
-Loading: 300283 Timisoara, Romania
-Unloading: 4715-405 Braga, Portugal
-Can be picked up. Payment after 7 days
-```
-
-*Prompt*
-
-```text
-System:
 You are a bot that extract data from emails in different languages. Below are the rules that you have to follow:
 - You can only write valid JSONs based on the documentation below:
 
@@ -24,11 +12,17 @@ JSON is strictly forbidden.
 documentation.
 - You can enhance the output with general common-knowledge facts about the world relevant to the procurement event.
 - If you cannot find a piece of information, you can leave the corresponding attribute as "".
+```
 
-User:
-{{ email }}
+*Human message*
 
-Assistant:
+```text
+Hello,
+Please send me your offer for groupage transport for:
+1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
+Loading: 300283 Timisoara, Romania
+Unloading: 4715-405 Braga, Portugal
+Can be picked up. Payment after 7 days
 ```
 
 *Response*
