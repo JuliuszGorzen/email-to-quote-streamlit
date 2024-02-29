@@ -1,6 +1,8 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import AzureChatOpenAI
 from yaml.loader import SafeLoader
 
 from constants import HIDE_SIDEBAR_HTML, DISPLAY_SIDEBAR_HTML, HIDE_STREAMLIT_ELEMENTS
@@ -49,7 +51,8 @@ def main():
 
         # ---- MAIN PAGE ----
         st.title("Email to Quote :e-mail::arrow_right::moneybag:")
-        with st.expander(":rainbow[What is this app about?] :thinking_face:"):
+
+        with st.expander("**:rainbow[How to start?]** :thinking_face:"):
             st.markdown(read_md_file("markdowns/main-page-description.md"))
 
         # ---- TABS ----
@@ -63,24 +66,142 @@ def main():
             ])
 
         with zero_shot_prompting_tab:
-            st.header("Zero-shot Prompting :zero::gun:")
+            st.header(":orange[Zero-shot Prompting] :zero::gun:")
+            st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
 
-            with st.expander("See example :eyes:"):
-                st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
+            with st.expander("**See example** :eyes:"):
+                st.markdown(read_md_file("markdowns/zero-shot-prompting-example.md"))
 
             with st.form("zero_shot_prompting_form"):
                 st.header("Try Zero-shot Prompting")
-                user_input = st.text_input(
+                user_input_val = st.text_area(
+                    label="Enter email here:",
+                    placeholder="""Hello,
+Please send me your offer for groupage transport for:
+1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
+Loading: 300283 Timisoara, Romania
+Unloading: 4715-405 Braga, Portugal
+Can be picked up. Payment after 7 days"""
+                )
+                prompt_val = st.text_area(
                     label="Enter your prompt here:",
-                    value="Some example email."
+                    placeholder="""System:
+You are a bot that extract data from emails in different languages. Below are the rules that you have to follow:
+- You can only write valid JSONs based on the documentation below:
+
+{"from_address": "string", "to_address": "string"}
+
+- Your goal is to transform email input into structured JSON. Comments are not allowed in the JSON. Text outside the 
+JSON is strictly forbidden.
+- Users provide the email freight orders as input, which you will transform into JSON format given the JSON 
+documentation.
+- You can enhance the output with general common-knowledge facts about the world relevant to the procurement event.
+- If you cannot find a piece of information, you can leave the corresponding attribute as "".
+
+User:
+{email}
+
+Assistant:"""
                 )
-                submitted = st.form_submit_button(
-                    label="Sent prompt to model :rocket:",
-                    disabled=True
-                )
+                submitted = st.form_submit_button(label="Sent prompt to model :rocket:")
 
                 if submitted:
-                    st.write("You entered:", user_input)
+                    if user_input_val == "":
+                        user_input_val = """Hello,
+Please send me your offer for groupage transport for:
+1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
+Loading: 300283 Timisoara, Romania
+Unloading: 4715-405 Braga, Portugal
+Can be picked up. Payment after 7 days"""
+                    if prompt_val == "":
+                        prompt_val = """System:
+You are a bot that extract data from emails in different languages. Below are the rules that you have to follow:
+- You can only write valid JSONs based on the documentation below:
+```
+("from_address": "string", "to_address": "string")
+```
+- Your goal is to transform email input into structured JSON. Comments are not allowed in the JSON. Text outside the JSON is strictly forbidden.
+- Users provide the email freight orders as input, which you will transform into JSON format given the JSON documentation.
+- You can enhance the output with general common-knowledge facts about the world relevant to the procurement event.
+- If you cannot find a piece of information, you can leave the corresponding attribute as "".
+
+User:
+"
+FROM: Juliusz Gorzen
+RECEIVED: 2024-01-31 10:10:10.299064
+
+Hi,
+
+I would like to book a FTL transport from Safranberg 123, 12345 Ulm to
+Wietrzna 34, Wroclaw 52-023, Poland next Monday.
+
+Thanks.
+
+Sincerely,
+Juliusz
+"
+
+Assistant:
+(from_address": "Safranberg 123, 12345 Ulm", "to_address": "Wietrzna 34, Wroclaw 52-023, Poland")
+
+User:
+"
+FROM: Abc def
+RECEIVED: 2024-01-31 10:10:10.299064
+
+Hi,
+
+I would like to book a magic transport from 3486 Tuna Street, 48302, Bloomfield Township to
+1011 Franklin Avenue, Daytona Beach 32114, US on 2024-03-03 10 pm.
+
+Thanks you.
+
+BR,
+Abc
+"
+
+Assistant:
+("from_address": "3486 Tuna Street, 48302, Bloomfield Township", "to_address": "1011 Franklin Avenue, Daytona Beach 32114, US")
+
+User: 
+"
+FROM: John Taylor
+RECEIVED: 2024-01-31 10:10:10.299064
+
+Hi,
+
+Pleas book the transport.
+From: 2132 Thomas Street, Wheeling, US
+To: -
+Date: 2024-02-11 09:30
+"
+
+Assistant:
+("from_address": "2132 Thomas Street, Wheeling, US", "to_address": "")
+
+User:
+{email}
+
+Assistant:"""
+                    llm = AzureChatOpenAI(
+                        azure_endpoint="https://open-ai-resource-gen-ai.openai.azure.com/",
+                        openai_api_version="2023-07-01-preview",
+                        openai_api_key="",
+                        openai_api_type="azure",
+                        deployment_name="gpt-35-dev",
+                        model_name="gpt-35-turbo",
+                        model_version="0613",
+                        temperature=0.4
+                    )
+                    prompt = ChatPromptTemplate.from_template(prompt_val)
+
+                    chain = prompt | llm
+
+                    with st.spinner('Generating response...'):
+                        response = chain.invoke({"email": user_input_val})
+                    st.toast('Done!', icon='😍')
+                    st.markdown("#### Bot response:")
+                    st.text(response.content)
 
         with few_shot_prompting_tab:
             st.header("Few-shot Prompting :1234::gun:")
@@ -217,7 +338,10 @@ def main():
                 max_value=1.0,
                 value=0.5,
                 step=0.01,
-                help="A higher temperature value typically makes the output more diverse and creative but might also increase its likelihood of straying from the context. Conversely, a lower temperature value makes the AI's responses more focused and deterministic, sticking closely to the most likely prediction."
+                help="A higher temperature value typically makes the output more diverse and creative but might also "
+                     "increase its likelihood of straying from the context. Conversely, a lower temperature value "
+                     "makes the AI's responses more focused and deterministic, sticking closely to the most likely "
+                     "prediction."
             )
 
             # Submit button
@@ -229,7 +353,11 @@ def main():
 
             if submitted:
                 st.write("Model parameters saved with the following values:")
-                st.write("Temperature", temperature_slider_val)
+                st.write("Temperature:", temperature_slider_val)
+                st.write("OpenAI API key:", openai_api_key_val)
+
+        with st.sidebar.expander("Model description :pencil2:"):
+            st.markdown(read_md_file("markdowns/model-description.md"))
 
     elif st.session_state["authentication_status"] is False:
         # Display an error message if the user enters the wrong credentials
