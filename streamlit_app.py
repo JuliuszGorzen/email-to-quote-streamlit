@@ -3,6 +3,8 @@ import json
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
 from langchain_community.callbacks import get_openai_callback
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -13,260 +15,265 @@ import constants
 
 
 def main() -> None:
-    # Set page configuration
-    create_page_config()
+    credential = DefaultAzureCredential()
+    secret_client = SecretClient(vault_url="https://genai-dev-keyvault.vault.azure.net/", credential=credential)
+    openai_api_key_secret = secret_client.get_secret("openai-api-key")
+    llm = create_azure_openai_model(openai_api_key_secret, 0.2)
 
+    create_page_config()
     remove_unused_html()
 
     authenticator = create_authenticator()
-
-    # Add login page/form
-    authenticator.login(fields={
-        "Form name": "Login :closed_lock_with_key:",
-        "Username": "username",
-        "Password": "password",
-        "Login": "Enter to AI world :mechanical_arm::mechanical_leg:"
-    })
+    create_login_page(authenticator)
 
     if st.session_state["authentication_status"]:
         # Display expandable menu
         st.markdown(constants.DISPLAY_SIDEBAR_HTML, unsafe_allow_html=True)
 
-        # Add a logout button
-        authenticator.logout(
-            button_name="Leave AI world :disappointed_relieved::broken_heart:",
-            location="sidebar"
+        create_logout_button(authenticator)
+        create_main_page()
+        create_sidebar()
+        create_tabs(llm)
+    elif st.session_state["authentication_status"] is False:
+        st.error(constants.LOGIN_PAGE_ERROR_MESSAGE)
+    elif st.session_state["authentication_status"] is None:
+        st.warning(constants.LOGIN_PAGE_WARNING_MESSAGE)
+
+
+def create_logout_button(authenticator) -> None:
+    authenticator.logout(
+        button_name=constants.LOGOUT_BUTTON_TEXT,
+        location="sidebar"
+    )
+
+
+def create_login_page(authenticator) -> None:
+    authenticator.login(fields={
+        "Form name": constants.LOGIN_PAGE_NAME,
+        "Username": "username",
+        "Password": "password",
+        "Login": constants.LOGIN_BUTTON_TEXT
+    })
+
+
+def create_main_page() -> None:
+    st.title(constants.MAIN_PAGE_HEADER)
+    with st.expander(constants.MAIN_PAGE_EXPANDER):
+        st.markdown(read_md_file("markdowns/main-page-description.md"))
+
+
+def create_sidebar() -> None:
+    st.sidebar.header(constants.SIDEBAR_HEADER)
+    st.sidebar.subheader(constants.SIDEBAR_SUBHEADER)
+
+    with st.sidebar.form("model_parameters_form"):
+        st.write(constants.SIDEBAR_FORM_DESCRIPTION)
+        st.text_input(
+            label=constants.SIDEBAR_FORM_AZURE_ENDPOINT,
+            value="https://open-ai-resource-gen-ai.openai.azure.com/",
+            type="password",
+            disabled=True
+        )
+        st.text_input(
+            label=constants.SIDEBAR_FORM_OPENAI_API_VERSION,
+            value="2023-07-01-preview",
+            disabled=True
+        )
+        openai_api_key_val = st.text_input(
+            label=constants.SIDEBAR_FORM_OPENAI_API_KEY,
+            placeholder="<api-key>",
+            type="password",
+            help=constants.SIDEBAR_FORM_OPENAI_API_KEY_HELP
         )
 
-        # ---- MAIN PAGE ----
-        st.title("Email to Quote :e-mail::arrow_right::moneybag:")
+        if openai_api_key_val == "":
+            st.warning(constants.SIDEBAR_FORM_OPENAI_API_KEY_WARNING)
 
-        with st.expander("**:rainbow[How to start?]** :thinking_face:"):
-            st.markdown(read_md_file("markdowns/main-page-description.md"))
+        st.text_input(
+            label=constants.SIDEBAR_FORM_OPENAI_API_TYPE,
+            value="azure",
+            disabled=True
+        )
+        st.text_input(
+            label=constants.SIDEBAR_FORM_DEPLOYMENT_NAME,
+            value="gpt-35-dev",
+            disabled=True
+        )
+        st.text_input(
+            label=constants.SIDEBAR_FORM_MODEL_NAME,
+            value="gpt-35-turbo",
+            disabled=True
+        )
+        st.text_input(
+            label=constants.SIDEBAR_FORM_MODEL_VERSION,
+            value="0613",
+            disabled=True
+        )
+        temperature_slider_val = st.slider(
+            label=constants.SIDEBAR_FORM_TEMPERATURE,
+            min_value=0.0,
+            max_value=1.0,
+            value=0.5,
+            step=0.01,
+            help=constants.SIDEBAR_FORM_TEMPERATURE_HELP
+        )
+        submitted = st.form_submit_button(
+            label=constants.SIDEBAR_FORM_SUBMIT_BUTTON,
+            on_click=st.balloons,
+            use_container_width=True
+        )
 
-        # ---- SIDEBAR ----
-        st.sidebar.header("Model parameters:")
-        st.sidebar.subheader("Here you can set the parameters for the model.")
+        if submitted:
+            st.write(constants.SIDEBAR_FORM_SUMMARY)
+            st.write("Temperature:", temperature_slider_val)
+            st.write("OpenAI API key:", openai_api_key_val)
 
-        with st.sidebar.form("model_parameters_form"):
-            st.write("Some parameters are disabled as for now we have only one LLM.")
+    with st.sidebar.expander(constants.SIDEBAR_FORM_MODEL_DESCRIPTION):
+        st.markdown(read_md_file("markdowns/model-description.md"))
 
-            # Form fields
-            azure_endpoint_val = st.text_input(
-                label="Azure endpoint",
-                value="https://open-ai-resource-gen-ai.openai.azure.com/",
-                type="password",
-                disabled=True
-            )
-            openai_api_version_val = st.text_input(
-                label="OpenAI API version",
-                value="2023-07-01-preview",
-                disabled=True
-            )
-            openai_api_key_val = st.text_input(
-                label="OpenAI API key",
-                placeholder="<api-key>",
-                type="password",
-                help="You can find your API key in the Azure or contact the Generative AI team."
-            )
 
-            if openai_api_key_val == "<api-key>" or openai_api_key_val == "":
-                st.warning("Please enter your OpenAI API key.")
+def create_tabs(llm: AzureChatOpenAI) -> None:
+    zero_shot_prompting_tab, few_shot_prompting_tab, ner_zero_shot_prompting, ner_few_shot_prompting, rag = st.tabs(
+        [
+            constants.TAB_NAME_ZERO_SHOT_PROMPTING,
+            constants.TAB_NAME_FEW_SHOT_PROMPTING,
+            constants.TAB_NAME_NER_ZERO_SHOT_PROMPTING,
+            constants.TAB_NAME_NER_FEW_SHOT_PROMPTING,
+            constants.TAB_NAME_RAG
+        ])
 
-            openai_api_type_val = st.text_input(
-                label="OpenAI API type",
-                value="azure",
-                disabled=True
-            )
-            deployment_name_val = st.text_input(
-                label="Deployment name",
-                value="gpt-35-dev",
-                disabled=True
-            )
-            model_name_val = st.text_input(
-                label="Model name",
-                value="gpt-35-turbo",
-                disabled=True
-            )
-            model_version_val = st.text_input(
-                label="Model version",
-                value="0613",
-                disabled=True
-            )
-            temperature_slider_val = st.slider(
-                label="Temperature",
-                min_value=0.0,
-                max_value=1.0,
-                value=0.5,
-                step=0.01,
-                help="A higher temperature value typically makes the output more diverse and creative but might also "
-                     "increase its likelihood of straying from the context. Conversely, a lower temperature value "
-                     "makes the AI's responses more focused and deterministic, sticking closely to the most likely "
-                     "prediction."
-            )
+    with zero_shot_prompting_tab:
+        st.header(constants.ZERO_SHOT_PROMPTING_TAB_HEADER)
+        st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
 
-            # Submit button
+        with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/zero-shot-prompting-example.md"))
+
+        with st.form("zero_shot_prompting_form"):
+            st.header(constants.ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
+            system_message = st.text_area(
+                label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                placeholder=constants.ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
+                height=200
+            )
+            human_message = st.text_area(
+                label=constants.TAB_FORM_HUMAN_MESSAGE,
+                placeholder=constants.ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
+                height=200
+            )
+            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
+
+            if submitted:
+                if is_any_field_empty([human_message, system_message]):
+                    st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
+                    st.stop()
+
+                with get_openai_callback() as callbacks:
+                    prompt = ChatPromptTemplate.from_messages([
+                        SystemMessage(system_message),
+                        HumanMessage(human_message)
+                    ])
+                    chain = prompt | llm
+
+                    with st.spinner("Generating response..."):
+                        response = chain.invoke({})
+
+                    st.markdown(constants.TAB_FORM_BOT_RESPONSE)
+
+                    try:
+                        st.json(json.loads(response.content))
+                    except ValueError:
+                        st.text(response.content)
+
+                    st.markdown(constants.TAB_FORM_FULL_PROMPT)
+                    st.text(prompt.format())
+                    st.markdown(constants.TAB_FORM_REQUEST_STATS)
+                    st.text(callbacks)
+                    st.toast("Done!", icon="😍")
+
+    with few_shot_prompting_tab:
+        st.header("Few-shot Prompting :1234::gun:")
+
+        with st.expander("See example :eyes:"):
+            st.markdown(read_md_file("markdowns/few-shot-prompting-description.md"))
+
+        with st.form("few_shot_prompting_form"):
+            st.header("Try Few-shot Prompting")
+            user_input = st.text_input(
+                label="Enter your prompt here:",
+                value="Some example email."
+            )
             submitted = st.form_submit_button(
-                label="Save :white_check_mark:",
-                on_click=st.balloons,
-                use_container_width=True
+                label="Sent prompt to model :rocket:",
+                disabled=True
             )
 
             if submitted:
-                st.write("Model parameters saved with the following values:")
-                st.write("Temperature:", temperature_slider_val)
-                st.write("OpenAI API key:", openai_api_key_val)
+                st.write("You entered:", user_input)
 
-        with st.sidebar.expander("Model description :pencil2:"):
-            st.markdown(read_md_file("markdowns/model-description.md"))
+    with ner_zero_shot_prompting:
+        st.header("NER + Zero-shot Prompting :writing_hand::heavy_plus_sign::zero::gun:")
 
-        # ---- TABS ----
-        zero_shot_prompting_tab, few_shot_prompting_tab, ner_zero_shot_prompting, ner_few_shot_prompting, rag = st.tabs(
-            [
-                "Zero-shot Prompting :zero::gun:",
-                "Few-shot Prompting :1234::gun:",
-                "NER + Zero-shot Prompting :writing_hand::heavy_plus_sign::zero::gun:",
-                "NER + Few-shot Prompting :writing_hand::heavy_plus_sign::1234::gun:",
-                "RAG :bookmark_tabs:"
-            ])
+        with st.expander("See example :eyes:"):
+            st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
 
-        with zero_shot_prompting_tab:
-            st.header(":orange[Zero-shot Prompting] :zero::gun:")
-            st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
+        with st.form("ner_zero_shot_prompting_form"):
+            st.header("Try NER + Zero-shot Prompting")
+            user_input = st.text_input(
+                label="Enter your prompt here:",
+                value="Some example email."
+            )
+            submitted = st.form_submit_button(
+                label="Sent prompt to model :rocket:",
+                disabled=True
+            )
 
-            with st.expander("**See example** :eyes:"):
-                st.markdown(read_md_file("markdowns/zero-shot-prompting-example.md"))
+            if submitted:
+                st.write("You entered:", user_input)
 
-            with st.form("zero_shot_prompting_form"):
-                st.header("Try Zero-shot Prompting")
-                system_message = st.text_area(
-                    label="Enter system message:",
-                    placeholder=constants.ZERO_SHOT_PROMPT_SYSTEM_MESSAGE,
-                    height=200
-                )
-                human_message = st.text_area(
-                    label="Enter human message:",
-                    placeholder=constants.ZERO_SHOT_PROMPT_HUMAN_MESSAGE,
-                    height=200
-                )
-                submitted = st.form_submit_button(label="Sent prompt to model :rocket:")
+    with ner_few_shot_prompting:
+        st.header("NER + Few-shot Prompting :writing_hand::heavy_plus_sign::1234::gun:")
 
-                if submitted:
-                    if system_message == "" or human_message == "":
-                        st.warning("Please enter system or/and human message. Or copy from the example above.")
-                        st.stop()
+        with st.expander("See example :eyes:"):
+            st.markdown(read_md_file("markdowns/ner-few-shot-prompting-description.md"))
 
-                    with get_openai_callback() as callbacks:
-                        llm = create_azure_openai_model("", 0.2)
-                        prompt = ChatPromptTemplate.from_messages([
-                            SystemMessage(system_message),
-                            HumanMessage(human_message)
-                        ])
-                        chain = prompt | llm
+        with st.form("ner_few_shot_prompting_form"):
+            st.header("Try NER + Few-shot Prompting")
+            user_input = st.text_input(
+                label="Enter your prompt here:",
+                value="Some example email."
+            )
+            submitted = st.form_submit_button(
+                label="Sent prompt to model :rocket:",
+                disabled=True
+            )
 
-                        with st.spinner('Generating response...'):
-                            response = chain.invoke({})
+            if submitted:
+                st.write("You entered:", user_input)
 
-                        st.markdown("#### Bot response :speech_balloon:")
+    with rag:
+        st.header("RAG :bookmark_tabs:")
 
-                        try:
-                            st.json(json.loads(response.content))
-                        except ValueError:
-                            st.text(response.content)
+        with st.expander("See example :eyes:"):
+            st.markdown(read_md_file("markdowns/rag-description.md"))
 
-                        st.markdown("#### Full prompt :capital_abcd:")
-                        st.text(prompt.format())
-                        st.markdown("#### Request stats :chart_with_upwards_trend::money_with_wings:")
-                        st.text(callbacks)
-                        st.toast('Done!', icon='😍')
+        with st.form("rag_form"):
+            st.header("Try RAG")
+            user_input = st.text_input(
+                label="Enter your prompt here:",
+                value="Some example email."
+            )
+            submitted = st.form_submit_button(
+                label="Sent prompt to model :rocket:",
+                disabled=True
+            )
 
-        with few_shot_prompting_tab:
-            st.header("Few-shot Prompting :1234::gun:")
+            if submitted:
+                st.write("You entered:", user_input)
 
-            with st.expander("See example :eyes:"):
-                st.markdown(read_md_file("markdowns/few-shot-prompting-description.md"))
 
-            with st.form("few_shot_prompting_form"):
-                st.header("Try Few-shot Prompting")
-                user_input = st.text_input(
-                    label="Enter your prompt here:",
-                    value="Some example email."
-                )
-                submitted = st.form_submit_button(
-                    label="Sent prompt to model :rocket:",
-                    disabled=True
-                )
-
-                if submitted:
-                    st.write("You entered:", user_input)
-
-        with ner_zero_shot_prompting:
-            st.header("NER + Zero-shot Prompting :writing_hand::heavy_plus_sign::zero::gun:")
-
-            with st.expander("See example :eyes:"):
-                st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
-
-            with st.form("ner_zero_shot_prompting_form"):
-                st.header("Try NER + Zero-shot Prompting")
-                user_input = st.text_input(
-                    label="Enter your prompt here:",
-                    value="Some example email."
-                )
-                submitted = st.form_submit_button(
-                    label="Sent prompt to model :rocket:",
-                    disabled=True
-                )
-
-                if submitted:
-                    st.write("You entered:", user_input)
-
-        with ner_few_shot_prompting:
-            st.header("NER + Few-shot Prompting :writing_hand::heavy_plus_sign::1234::gun:")
-
-            with st.expander("See example :eyes:"):
-                st.markdown(read_md_file("markdowns/ner-few-shot-prompting-description.md"))
-
-            with st.form("ner_few_shot_prompting_form"):
-                st.header("Try NER + Few-shot Prompting")
-                user_input = st.text_input(
-                    label="Enter your prompt here:",
-                    value="Some example email."
-                )
-                submitted = st.form_submit_button(
-                    label="Sent prompt to model :rocket:",
-                    disabled=True
-                )
-
-                if submitted:
-                    st.write("You entered:", user_input)
-
-        with rag:
-            st.header("RAG :bookmark_tabs:")
-
-            with st.expander("See example :eyes:"):
-                st.markdown(read_md_file("markdowns/rag-description.md"))
-
-            with st.form("rag_form"):
-                st.header("Try RAG")
-                user_input = st.text_input(
-                    label="Enter your prompt here:",
-                    value="Some example email."
-                )
-                submitted = st.form_submit_button(
-                    label="Sent prompt to model :rocket:",
-                    disabled=True
-                )
-
-                if submitted:
-                    st.write("You entered:", user_input)
-
-    elif st.session_state["authentication_status"] is False:
-        # Display an error message if the user enters the wrong credentials
-        st.error('Username or/and password is incorrect. Try again.')
-
-    elif st.session_state["authentication_status"] is None:
-        # Display a warning message if the user does not enter the credentials/leaves the fields empty
-        st.warning('Please enter your username and password.')
+def is_any_field_empty(list_of_fields: list) -> bool:
+    return any([field == "" for field in list_of_fields])
 
 
 def create_azure_openai_model(openai_api_key: str, temperature: float) -> AzureChatOpenAI:
@@ -300,16 +307,16 @@ def remove_unused_html() -> None:
 
 def create_authenticator() -> stauth.Authenticate:
     # Load authentication credentials from .yaml file
-    with open('authentication.yaml') as file:
+    with open("authentication.yaml") as file:
         config = yaml.load(file, Loader=SafeLoader)
 
     # create an instance of the Authenticate class with the credentials
     return stauth.Authenticate(
-        config['credentials'],
-        config['cookie']['name'],
-        config['cookie']['key'],
-        config['cookie']['expiry_days'],
-        config['preauthorized']
+        config["credentials"],
+        config["cookie"]["name"],
+        config["cookie"]["key"],
+        config["cookie"]["expiry_days"],
+        config["preauthorized"]
     )
 
 
