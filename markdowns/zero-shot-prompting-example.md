@@ -1,4 +1,6 @@
-*System message*
+### *System message*
+
+Message for priming AI behavior, usually passed in as the first of a sequence of input messages.
 
 ```text
 You are a bot that extract data from emails in different languages. Below are the rules that you have to follow:
@@ -14,7 +16,9 @@ documentation.
 - If you cannot find a piece of information, you can leave the corresponding attribute as "".
 ```
 
-*Human message*
+### *Human message*
+
+Message from a human. User input that the AI will process.
 
 ```text
 Hello,
@@ -25,7 +29,7 @@ Unloading: 4715-405 Braga, Portugal
 Can be picked up. Payment after 7 days
 ```
 
-*Response*
+### *Response*
 
 ```json
 {
