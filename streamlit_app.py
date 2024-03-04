@@ -6,7 +6,7 @@ import yaml
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from langchain_community.callbacks import get_openai_callback
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import AzureChatOpenAI
 from yaml.loader import SafeLoader
@@ -142,74 +142,8 @@ def create_tabs(llm: AzureChatOpenAI) -> None:
             constants.TAB_NAME_RAG
         ])
 
-    with zero_shot_prompting_tab:
-        st.header(constants.ZERO_SHOT_PROMPTING_TAB_HEADER)
-        st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
-
-        with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
-            st.markdown(read_md_file("markdowns/zero-shot-prompting-example.md"))
-
-        with st.form("zero_shot_prompting_form"):
-            st.header(constants.ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
-            system_message = st.text_area(
-                label=constants.TAB_FORM_SYSTEM_MESSAGE,
-                placeholder=constants.ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
-                height=200
-            )
-            human_message = st.text_area(
-                label=constants.TAB_FORM_HUMAN_MESSAGE,
-                placeholder=constants.ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
-                height=200
-            )
-            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
-
-            if submitted:
-                if is_any_field_empty([human_message, system_message]):
-                    st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
-                    st.stop()
-
-                with get_openai_callback() as callbacks:
-                    prompt = ChatPromptTemplate.from_messages([
-                        SystemMessage(system_message),
-                        HumanMessage(human_message)
-                    ])
-                    chain = prompt | llm
-
-                    with st.spinner("Generating response..."):
-                        response = chain.invoke({})
-
-                    st.markdown(constants.TAB_FORM_BOT_RESPONSE)
-
-                    try:
-                        st.json(json.loads(response.content))
-                    except ValueError:
-                        st.text(response.content)
-
-                    st.markdown(constants.TAB_FORM_FULL_PROMPT)
-                    st.text(prompt.format())
-                    st.markdown(constants.TAB_FORM_REQUEST_STATS)
-                    st.text(callbacks)
-                    st.toast("Done!", icon="😍")
-
-    with few_shot_prompting_tab:
-        st.header("Few-shot Prompting :1234::gun:")
-
-        with st.expander("See example :eyes:"):
-            st.markdown(read_md_file("markdowns/few-shot-prompting-description.md"))
-
-        with st.form("few_shot_prompting_form"):
-            st.header("Try Few-shot Prompting")
-            user_input = st.text_input(
-                label="Enter your prompt here:",
-                value="Some example email."
-            )
-            submitted = st.form_submit_button(
-                label="Sent prompt to model :rocket:",
-                disabled=True
-            )
-
-            if submitted:
-                st.write("You entered:", user_input)
+    create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm)
+    create_few_shot_prompting_tab(few_shot_prompting_tab, llm)
 
     with ner_zero_shot_prompting:
         st.header("NER + Zero-shot Prompting :writing_hand::heavy_plus_sign::zero::gun:")
@@ -270,6 +204,157 @@ def create_tabs(llm: AzureChatOpenAI) -> None:
 
             if submitted:
                 st.write("You entered:", user_input)
+
+
+def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
+    with few_shot_prompting_tab:
+        st.header(constants.FEW_SHOT_PROMPTING_TAB_HEADER)
+        st.markdown(read_md_file("markdowns/few-shot-prompting-description.md"))
+
+        with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/few-shot-prompting-example.md"))
+
+        with st.form("few_shot_prompting_form"):
+            st.header(constants.FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
+            system_message = st.text_area(
+                label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                placeholder=constants.FEW_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
+                height=200
+            )
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.subheader("First example")
+                human_message_1 = st.text_area(
+                    label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_1,
+                    height=200
+                )
+                ai_message_1 = st.text_area(
+                    label=constants.TAB_FORM_AI_MESSAGE,
+                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_1,
+                    height=25
+                )
+
+            with col2:
+                st.subheader("Second example")
+                human_message_2 = st.text_area(
+                    label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_2,
+                    height=200
+                )
+                ai_message_2 = st.text_area(
+                    label=constants.TAB_FORM_AI_MESSAGE,
+                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_2,
+                    height=25
+                )
+
+            with col3:
+                st.subheader("Third example")
+                human_message_3 = st.text_area(
+                    label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_3,
+                    height=200
+                )
+                ai_message_3 = st.text_area(
+                    label=constants.TAB_FORM_AI_MESSAGE,
+                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_3,
+                    height=25
+                )
+
+            st.subheader("Actual email")
+            human_message_4 = st.text_area(
+                label=constants.TAB_FORM_HUMAN_MESSAGE,
+                placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_4,
+                height=200
+            )
+            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
+
+            if submitted:
+                if is_any_field_empty([system_message, human_message_1, ai_message_1, human_message_2, ai_message_2,
+                                       human_message_3, ai_message_3, human_message_4]):
+                    st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
+                    st.stop()
+
+                with get_openai_callback() as callbacks:
+                    prompt = ChatPromptTemplate.from_messages([
+                        SystemMessage(system_message),
+                        HumanMessage(human_message_1),
+                        AIMessage(ai_message_1),
+                        HumanMessage(human_message_2),
+                        AIMessage(ai_message_2),
+                        HumanMessage(human_message_3),
+                        AIMessage(ai_message_3),
+                        HumanMessage(human_message_4)
+                    ])
+                    chain = prompt | llm
+
+                    with st.spinner("Generating response..."):
+                        response = chain.invoke({})
+
+                    st.markdown(constants.TAB_FORM_BOT_RESPONSE)
+
+                    try:
+                        st.json(json.loads(response.content))
+                    except ValueError:
+                        st.text(response.content)
+
+                    st.markdown(constants.TAB_FORM_FULL_PROMPT)
+                    st.text(prompt.format())
+                    st.markdown(constants.TAB_FORM_REQUEST_STATS)
+                    st.text(callbacks)
+                    st.toast("Done!", icon="😍")
+
+
+def create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm):
+    with zero_shot_prompting_tab:
+        st.header(constants.ZERO_SHOT_PROMPTING_TAB_HEADER)
+        st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
+
+        with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/zero-shot-prompting-example.md"))
+
+        with st.form("zero_shot_prompting_form"):
+            st.header(constants.ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
+            system_message = st.text_area(
+                label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                placeholder=constants.ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
+                height=200
+            )
+            human_message = st.text_area(
+                label=constants.TAB_FORM_HUMAN_MESSAGE,
+                placeholder=constants.ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
+                height=200
+            )
+            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
+
+            if submitted:
+                if is_any_field_empty([system_message, human_message]):
+                    st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
+                    st.stop()
+
+                with get_openai_callback() as callbacks:
+                    prompt = ChatPromptTemplate.from_messages([
+                        SystemMessage(system_message),
+                        HumanMessage(human_message)
+                    ])
+                    chain = prompt | llm
+
+                    with st.spinner("Generating response..."):
+                        response = chain.invoke({})
+
+                    st.markdown(constants.TAB_FORM_BOT_RESPONSE)
+
+                    try:
+                        st.json(json.loads(response.content))
+                    except ValueError:
+                        st.text(response.content)
+
+                    st.markdown(constants.TAB_FORM_FULL_PROMPT)
+                    st.text(prompt.format())
+                    st.markdown(constants.TAB_FORM_REQUEST_STATS)
+                    st.text(callbacks)
+                    st.toast("Done!", icon="😍")
 
 
 def is_any_field_empty(list_of_fields: list) -> bool:

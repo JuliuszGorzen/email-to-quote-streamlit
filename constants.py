@@ -98,6 +98,8 @@ TAB_FORM_SYSTEM_MESSAGE = "Enter system message:"
 
 TAB_FORM_HUMAN_MESSAGE = "Enter human message:"
 
+TAB_FORM_AI_MESSAGE = "Enter AI message:"
+
 TAB_FORM_SUBMIT_BUTTON = "Sent prompt to model :rocket:"
 
 TAB_FORM_EMPTY_FIELD_WARNING = "Please enter system or/and human message. Or copy from the example above."
@@ -114,7 +116,8 @@ ZERO_SHOT_PROMPTING_TAB_HEADER = ":orange[Zero-shot Prompting] :zero::gun:"
 
 ZERO_SHOT_PROMPTING_TAB_FORM_HEADER = "Try Zero-shot Prompting"
 
-ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE = """You are a bot that extract data from emails in different languages. Below are the rules that you have to follow:
+ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE = """You are a bot that extract data from emails in different languages.
+Below are the rules that you have to follow:
 - You can only write valid JSONs based on the documentation below:
 ```
 {"from_address": "string", "to_address": "string"}
@@ -134,6 +137,72 @@ Unloading: 4715-405 Braga, Portugal
 Can be picked up. Payment after 7 days"""
 
 # --- FEW-SHOT PROMPTING TAB ---
+
+FEW_SHOT_PROMPTING_TAB_HEADER = ":orange[Few-shot Prompting] :1234::gun:"
+
+FEW_SHOT_PROMPTING_TAB_FORM_HEADER = "Try Few-shot Prompting"
+
+FEW_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE = """You are a bot that extract data from emails in different languages.
+Below are the rules that you have to follow:
+- You can only write valid JSONs based on the documentation below:
+```
+{"from_address": "string", "to_address": "string"}
+```
+- Your goal is to transform email input into structured JSON. Comments are not allowed in the JSON. Text outside the 
+JSON is strictly forbidden.
+- Users provide the email freight orders as input, which you will transform into JSON format given the JSON 
+documentation.
+- You can enhance the output with general common-knowledge facts about the world relevant to the procurement event.
+- If you cannot find a piece of information, you can leave the corresponding attribute as ""."""
+
+FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_1 = """FROM: Juliusz Gorzen
+RECEIVED: 2024-01-31 10:10:10.299064
+
+Hi,
+
+I would like to book a FTL transport from Safranberg 123, 12345 Ulm to
+Wietrzna 34, Wroclaw 52-023, Poland next Monday.
+
+Thanks.
+
+Sincerely,
+Juliusz"""
+
+FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_1 = """{"from_address": "Safranberg 123, 12345 Ulm", "to_address": "Wietrzna 34, Wroclaw 52-023, Poland"}"""
+
+FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_2 = """FROM: Abc def
+RECEIVED: 2024-01-31 10:10:10.299064
+
+Hi,
+
+I would like to book a magic transport from 3486 Tuna Street, 48302, Bloomfield Township to
+1011 Franklin Avenue, Daytona Beach 32114, US on 2024-03-03 10 pm.
+
+Thanks you.
+
+BR,
+Abc"""
+
+FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_2 = """{"from_address": "3486 Tuna Street, 48302, Bloomfield Township", "to_address": "1011 Franklin Avenue, Daytona Beach 32114, US"}"""
+
+FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_3 = """FROM: John Taylor
+RECEIVED: 2024-01-31 10:10:10.299064
+
+Hi,
+
+Pleas book the transport.
+From: 2132 Thomas Street, Wheeling, US
+To: -
+Date: 2024-02-11 09:30"""
+
+FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_3 = """{"from_address": "2132 Thomas Street, Wheeling, US", "to_address": ""}"""
+
+FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_4 = """Hello,
+Please send me your offer for groupage transport for:
+1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
+Loading: 300283 Timisoara, Romania
+Unloading: 4715-405 Braga, Portugal
+Can be picked up. Payment after 7 days"""
 
 # --- NER ZERO-SHOT PROMPTING TAB ---
 
