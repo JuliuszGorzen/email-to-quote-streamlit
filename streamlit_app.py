@@ -7,7 +7,7 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from langchain_community.callbacks import get_openai_callback
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_openai import AzureChatOpenAI
 from yaml.loader import SafeLoader
 
@@ -144,26 +144,27 @@ def create_tabs(llm: AzureChatOpenAI) -> None:
 
     create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm)
     create_few_shot_prompting_tab(few_shot_prompting_tab, llm)
+    create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm)
 
-    with ner_zero_shot_prompting:
-        st.header("NER + Zero-shot Prompting :writing_hand::heavy_plus_sign::zero::gun:")
-
-        with st.expander("See example :eyes:"):
-            st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
-
-        with st.form("ner_zero_shot_prompting_form"):
-            st.header("Try NER + Zero-shot Prompting")
-            user_input = st.text_input(
-                label="Enter your prompt here:",
-                value="Some example email."
-            )
-            submitted = st.form_submit_button(
-                label="Sent prompt to model :rocket:",
-                disabled=True
-            )
-
-            if submitted:
-                st.write("You entered:", user_input)
+    # with ner_zero_shot_prompting:
+    #     st.header("NER + Zero-shot Prompting :writing_hand::heavy_plus_sign::zero::gun:")
+    #
+    #     with st.expander("See example :eyes:"):
+    #         st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
+    #
+    #     with st.form("ner_zero_shot_prompting_form"):
+    #         st.header("Try NER + Zero-shot Prompting")
+    #         user_input = st.text_input(
+    #             label="Enter your prompt here:",
+    #             value="Some example email."
+    #         )
+    #         submitted = st.form_submit_button(
+    #             label="Sent prompt to model :rocket:",
+    #             disabled=True
+    #         )
+    #
+    #         if submitted:
+    #             st.write("You entered:", user_input)
 
     with ner_few_shot_prompting:
         st.header("NER + Few-shot Prompting :writing_hand::heavy_plus_sign::1234::gun:")
@@ -204,6 +205,65 @@ def create_tabs(llm: AzureChatOpenAI) -> None:
 
             if submitted:
                 st.write("You entered:", user_input)
+
+
+def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
+    with ner_zero_shot_prompting:
+        st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_HEADER)
+        st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
+
+        with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-example.md"))
+
+        with st.form("ner_zero_shot_prompting_form"):
+            st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
+            system_message = st.text_area(
+                label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
+                placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
+                height=200
+            )
+            ner_message = st.text_area(
+                label="NER (categories definition)",
+                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_CATEGORIES,
+                placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_CATEGORIES,
+                height=200
+            )
+            human_message = st.text_area(
+                label=constants.TAB_FORM_HUMAN_MESSAGE,
+                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
+                placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
+                height=200
+            )
+            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
+
+            if submitted:
+                if is_any_field_empty([system_message, ner_message, human_message]):
+                    st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
+                    st.stop()
+
+                with get_openai_callback() as callbacks:
+                    prompt = ChatPromptTemplate.from_messages([
+                        SystemMessagePromptTemplate.from_template(system_message),
+                        HumanMessage(human_message)
+                    ])
+                    chain = prompt | llm
+
+                    with st.spinner("Generating response..."):
+                        response = chain.invoke(input={"categories": ner_message})
+
+                    st.markdown(constants.TAB_FORM_BOT_RESPONSE)
+
+                    try:
+                        st.json(json.loads(response.content))
+                    except ValueError:
+                        st.text(response.content)
+
+                    st.markdown(constants.TAB_FORM_FULL_PROMPT)
+                    st.text(prompt.format(categories=ner_message))
+                    st.markdown(constants.TAB_FORM_REQUEST_STATS)
+                    st.text(callbacks)
+                    st.toast("Done!", icon="😍")
 
 
 def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
