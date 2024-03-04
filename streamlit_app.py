@@ -1,4 +1,5 @@
 import json
+import re
 
 import streamlit as st
 import streamlit_authenticator as stauth
@@ -46,14 +47,14 @@ def main() -> None:
         st.warning(constants.LOGIN_PAGE_WARNING_MESSAGE)
 
 
-def create_logout_button(authenticator) -> None:
+def create_logout_button(authenticator: stauth.Authenticate) -> None:
     authenticator.logout(
         button_name=constants.LOGOUT_BUTTON_TEXT,
         location="sidebar"
     )
 
 
-def create_login_page(authenticator) -> None:
+def create_login_page(authenticator: stauth.Authenticate) -> None:
     authenticator.login(fields={
         "Form name": constants.LOGIN_PAGE_NAME,
         "Username": "username",
@@ -160,7 +161,7 @@ def create_tabs(llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> N
     create_rag_tab(rag, llm, embedding_llm)
 
 
-def create_rag_tab(rag, llm, embedding_llm):
+def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> None:
     with rag:
         st.header(constants.RAG_TAB_HEADER)
         st.markdown(read_md_file("markdowns/rag-description.md"))
@@ -178,6 +179,7 @@ def create_rag_tab(rag, llm, embedding_llm):
             st.header(constants.RAG_TAB_FORM_HEADER)
             system_message = st.text_area(
                 label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                value=constants.RAG_TAB_SYSTEM_MESSAGE,
                 placeholder=constants.RAG_TAB_SYSTEM_MESSAGE,
                 height=200
             )
@@ -187,6 +189,7 @@ def create_rag_tab(rag, llm, embedding_llm):
             with col1:
                 human_message = st.text_area(
                     label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    value=constants.RAG_TAB_HUMAN_MESSAGE,
                     placeholder=constants.RAG_TAB_HUMAN_MESSAGE,
                     height=200
                 )
@@ -240,7 +243,7 @@ def create_rag_tab(rag, llm, embedding_llm):
                     st.balloons()
 
 
-def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
+def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureChatOpenAI) -> None:
     with ner_few_shot_prompting:
         st.header(constants.NER_FEW_SHOT_PROMPTING_TAB_HEADER)
         st.markdown(read_md_file("markdowns/ner-few-shot-prompting-description.md"))
@@ -262,11 +265,13 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
             st.header(constants.NER_FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
             system_message = st.text_area(
                 label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                value=constants.NER_FEW_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 placeholder=constants.NER_FEW_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 height=200
             )
             ner_message = st.text_area(
                 label="NER (categories definition)",
+                value=constants.NER_FEW_SHOT_PROMPTING_TAB_CATEGORIES,
                 placeholder=constants.NER_FEW_SHOT_PROMPTING_TAB_CATEGORIES,
                 height=200
             )
@@ -277,6 +282,7 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
             with col1:
                 human_message_1 = st.text_area(
                     label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    value=constants.NER_FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_1,
                     placeholder=constants.NER_FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_1,
                     height=200
                 )
@@ -284,6 +290,7 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
             with col2:
                 ai_message_1 = st.text_area(
                     label=constants.TAB_FORM_AI_MESSAGE,
+                    value=constants.NER_FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_1,
                     placeholder=constants.NER_FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_1,
                     height=200
                 )
@@ -291,6 +298,7 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
             st.subheader("Actual email")
             human_message_2 = st.text_area(
                 label=constants.TAB_FORM_HUMAN_MESSAGE,
+                value=constants.NER_FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_2,
                 placeholder=constants.NER_FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_2,
                 height=200
             )
@@ -314,7 +322,8 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
                         response = chain.invoke(input={"categories": ner_message})
 
                     st.markdown(constants.TAB_FORM_BOT_RESPONSE)
-                    st.text(response.content)
+                    # st.text(response.content)
+                    create_annotated_text(response.content)
                     st.markdown(constants.TAB_FORM_FULL_PROMPT)
                     st.text(prompt.format(categories=ner_message))
                     st.markdown(constants.TAB_FORM_REQUEST_STATS)
@@ -323,7 +332,7 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
                     st.balloons()
 
 
-def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
+def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureChatOpenAI) -> None:
     with ner_zero_shot_prompting:
         st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_HEADER)
         st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
@@ -335,16 +344,19 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
             st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
             system_message = st.text_area(
                 label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 height=200
             )
             ner_message = st.text_area(
                 label="NER (categories definition)",
+                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_CATEGORIES,
                 placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_CATEGORIES,
                 height=200
             )
             human_message = st.text_area(
                 label=constants.TAB_FORM_HUMAN_MESSAGE,
+                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
                 placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
                 height=200
             )
@@ -380,7 +392,7 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
                     st.balloons()
 
 
-def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
+def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpenAI) -> None:
     with few_shot_prompting_tab:
         st.header(constants.FEW_SHOT_PROMPTING_TAB_HEADER)
         st.markdown(read_md_file("markdowns/few-shot-prompting-description.md"))
@@ -392,6 +404,7 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
             st.header(constants.FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
             system_message = st.text_area(
                 label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                value=constants.FEW_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 placeholder=constants.FEW_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 height=200
             )
@@ -401,11 +414,13 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
                 st.subheader("First example")
                 human_message_1 = st.text_area(
                     label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    value=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_1,
                     placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_1,
                     height=200
                 )
                 ai_message_1 = st.text_area(
                     label=constants.TAB_FORM_AI_MESSAGE,
+                    value=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_1,
                     placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_1,
                     height=25
                 )
@@ -414,11 +429,13 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
                 st.subheader("Second example")
                 human_message_2 = st.text_area(
                     label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    value=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_2,
                     placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_2,
                     height=200
                 )
                 ai_message_2 = st.text_area(
                     label=constants.TAB_FORM_AI_MESSAGE,
+                    value=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_2,
                     placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_2,
                     height=25
                 )
@@ -427,11 +444,13 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
                 st.subheader("Third example")
                 human_message_3 = st.text_area(
                     label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    value=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_3,
                     placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_3,
                     height=200
                 )
                 ai_message_3 = st.text_area(
                     label=constants.TAB_FORM_AI_MESSAGE,
+                    value=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_3,
                     placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_3,
                     height=25
                 )
@@ -439,6 +458,7 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
             st.subheader("Actual email")
             human_message_4 = st.text_area(
                 label=constants.TAB_FORM_HUMAN_MESSAGE,
+                value=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_4,
                 placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_4,
                 height=200
             )
@@ -481,7 +501,7 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
                     st.balloons()
 
 
-def create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm):
+def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatOpenAI) -> None:
     with zero_shot_prompting_tab:
         st.header(constants.ZERO_SHOT_PROMPTING_TAB_HEADER)
         st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
@@ -493,11 +513,13 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm):
             st.header(constants.ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
             system_message = st.text_area(
                 label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                value=constants.ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 placeholder=constants.ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 height=200
             )
             human_message = st.text_area(
                 label=constants.TAB_FORM_HUMAN_MESSAGE,
+                value=constants.ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
                 placeholder=constants.ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
                 height=200
             )
@@ -533,26 +555,25 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm):
                     st.balloons()
 
 
-# def create_annotated_text(text: str):
-#     entities = re.findall(r"\[(.*?)\]", text)
-#     labels = re.findall(r"\((.*?)\)", text)
-#
-#     for entity in entities:
-#         text = text.replace(f"[{entity}]", f"(\"{entity}\", ")
-#
-#     for label in labels:
-#         text = text.replace(f"({label})", f"\"{label}\")")
-#
-#     words = re.split(r"\((.*?)\)", text)
-#
-#     annotated_objects: list = []
-#
-#     for word in words:
-#         if word.startswith("\"") and word.endswith("\""):
-#             split = tuple(word.split(","))
-#             annotated_objects.append(split)
-#
-#     annotated_text(text)
+def create_annotated_text(text: str):
+    entities = re.findall(r"\[(.*?)\]", text)
+    labels = re.findall(r"\((.*?)\)", text)
+
+    for entity in entities:
+        text = text.replace(f"[{entity}]", f"({str(entity)},")
+
+    for label in labels:
+        text = text.replace(f"({label})", f"{str(label)})")
+
+    words = re.split(r"\((.*?)\)", text)
+
+    for word in words:
+        for label in labels:
+            if label == word.split(",")[-1]:
+                split = (word.split(",", 1)[0], label)
+                words[words.index(word)] = tuple(split)
+
+    annotated_text(words)
 
 
 def is_any_field_empty(list_of_fields: list) -> bool:
