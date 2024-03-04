@@ -8,7 +8,8 @@ Within each tab, you will find a description of the approach and a form to test 
 **:rainbow[Sidebar:]**
 
 On the left side of the screen, you will find the sidebar. It contains the model parameters form and the logout button.
-Each filed is described in the form, so you can easily fill it in.
+Each filed is described in the form, so you can easily fill it in. 
+:heavy_exclamation_mark: **:red[For now there is no need to fill in the form.]** :heavy_exclamation_mark:
 
 **:rainbow[Login:]**
 
