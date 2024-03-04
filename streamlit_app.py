@@ -3,12 +3,17 @@ import json
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
+from annotated_text import annotated_text
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.text_splitter import MarkdownHeaderTextSplitter
 from langchain_community.callbacks import get_openai_callback
+from langchain_community.vectorstores import FAISS
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
-from langchain_openai import AzureChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from yaml.loader import SafeLoader
 
 import constants
@@ -19,6 +24,7 @@ def main() -> None:
     secret_client = SecretClient(vault_url="https://genai-dev-keyvault.vault.azure.net/", credential=credential)
     openai_api_key_secret = secret_client.get_secret("openai-api-key")
     llm = create_azure_openai_model(openai_api_key_secret, 0.2)
+    embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret)
 
     create_page_config()
     remove_unused_html()
@@ -33,7 +39,7 @@ def main() -> None:
         create_logout_button(authenticator)
         create_main_page()
         create_sidebar()
-        create_tabs(llm)
+        create_tabs(llm, embedding_llm)
     elif st.session_state["authentication_status"] is False:
         st.error(constants.LOGIN_PAGE_ERROR_MESSAGE)
     elif st.session_state["authentication_status"] is None:
@@ -63,6 +69,7 @@ def create_main_page() -> None:
 
 
 def create_sidebar() -> None:
+    st.sidebar.divider()
     st.sidebar.header(constants.SIDEBAR_HEADER)
     st.sidebar.error(constants.SIDEBAR_ERROR_MESSAGE)
     st.sidebar.subheader(constants.SIDEBAR_SUBHEADER)
@@ -136,7 +143,7 @@ def create_sidebar() -> None:
         st.markdown(read_md_file("markdowns/model-description.md"))
 
 
-def create_tabs(llm: AzureChatOpenAI) -> None:
+def create_tabs(llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> None:
     zero_shot_prompting_tab, few_shot_prompting_tab, ner_zero_shot_prompting, ner_few_shot_prompting, rag = st.tabs(
         [
             constants.TAB_NAME_ZERO_SHOT_PROMPTING,
@@ -150,26 +157,87 @@ def create_tabs(llm: AzureChatOpenAI) -> None:
     create_few_shot_prompting_tab(few_shot_prompting_tab, llm)
     create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm)
     create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm)
+    create_rag_tab(rag, llm, embedding_llm)
 
+
+def create_rag_tab(rag, llm, embedding_llm):
     with rag:
-        st.header("RAG :bookmark_tabs:")
+        st.header(constants.RAG_TAB_HEADER)
+        st.markdown(read_md_file("markdowns/rag-description.md"))
 
-        with st.expander("See example :eyes:"):
-            st.markdown(read_md_file("markdowns/rag-description.md"))
+        with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/rag-example.md"))
+            st.download_button(
+                label="Download example markdown file :bookmark_tabs:",
+                data=constants.RAG_TAB_EXTERNAL_FILE,
+                file_name='example_markdown_rag.md',
+                mime='text/markdown',
+            )
 
         with st.form("rag_form"):
-            st.header("Try RAG")
-            user_input = st.text_input(
-                label="Enter your prompt here:",
-                value="Some example email."
-            )
-            submitted = st.form_submit_button(
-                label="Sent prompt to model :rocket:",
-                disabled=True
+            st.header(constants.RAG_TAB_FORM_HEADER)
+            system_message = st.text_area(
+                label=constants.TAB_FORM_SYSTEM_MESSAGE,
+                placeholder=constants.RAG_TAB_SYSTEM_MESSAGE,
+                height=200
             )
 
+            col1, col2 = st.columns(2)
+
+            with col1:
+                human_message = st.text_area(
+                    label=constants.TAB_FORM_HUMAN_MESSAGE,
+                    placeholder=constants.RAG_TAB_HUMAN_MESSAGE,
+                    height=200
+                )
+
+            with col2:
+                external_file = st.file_uploader(
+                    label=constants.TAB_FORM_FILE,
+                    type=["md"]
+                )
+
+            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
+
             if submitted:
-                st.write("You entered:", user_input)
+                if is_any_field_empty([system_message, human_message]):
+                    st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
+                    st.stop()
+
+                if external_file is None:
+                    st.warning(constants.TAB_FORM_EMPTY_FILE_WARNING)
+                    st.stop()
+
+                with get_openai_callback() as callbacks:
+                    headers_to_split_on = [
+                        ("#", "Header 1"),
+                        ("##", "Header 2"),
+                        ("###", "Header 3"),
+                        ("####", "Header 4")
+                    ]
+                    document = external_file.read().decode("utf-8")
+
+                    with st.spinner("Generating response..."):
+                        markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+                        docs = markdown_splitter.split_text(document)
+                        vectorstore = FAISS.from_documents(docs, embedding_llm)
+                        prompt = ChatPromptTemplate.from_messages([
+                            SystemMessagePromptTemplate.from_template(system_message),
+                            HumanMessagePromptTemplate.from_template("{input}")
+                        ])
+                        document_chain = create_stuff_documents_chain(llm, prompt)
+                        retriever = vectorstore.as_retriever()
+                        retrieval_chain = create_retrieval_chain(retriever, document_chain)
+                        response = retrieval_chain.invoke({"context": docs, "input": human_message})
+
+                    st.markdown(constants.TAB_FORM_BOT_RESPONSE)
+                    st.text(response["answer"])
+                    st.markdown(constants.TAB_FORM_FULL_PROMPT)
+                    st.text(prompt.format(context=[d.page_content for d in docs][0], input=human_message))
+                    st.markdown(constants.TAB_FORM_REQUEST_STATS)
+                    st.text(callbacks)
+                    st.toast("Done!", icon="😍")
+                    st.balloons()
 
 
 def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
@@ -179,6 +247,16 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
 
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/ner-few-shot-prompting-example.md"))
+            annotated_text(
+                "Hello, Please send me your offer for groupage transport for: 1 pallet: ",
+                ("120cm x 80cm x 120cm", "load_type"),
+                ("155 Kg", "weight"),
+                "Loading: ",
+                ("300283 Timisoara, Romania", "origin_location"),
+                "Unloading: ",
+                ("4715-405 Braga, Portugal", "destination_location"),
+                "Can be picked up. Payment after 7 days"
+            )
 
         with st.form("ner_few_shot_prompting_form"):
             st.header(constants.NER_FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
@@ -223,8 +301,6 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
                     st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
                     st.stop()
 
-                st.balloons()
-
                 with get_openai_callback() as callbacks:
                     prompt = ChatPromptTemplate.from_messages([
                         SystemMessagePromptTemplate.from_template(system_message),
@@ -238,17 +314,13 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm):
                         response = chain.invoke(input={"categories": ner_message})
 
                     st.markdown(constants.TAB_FORM_BOT_RESPONSE)
-
-                    try:
-                        st.json(json.loads(response.content))
-                    except ValueError:
-                        st.text(response.content)
-
+                    st.text(response.content)
                     st.markdown(constants.TAB_FORM_FULL_PROMPT)
                     st.text(prompt.format(categories=ner_message))
                     st.markdown(constants.TAB_FORM_REQUEST_STATS)
                     st.text(callbacks)
                     st.toast("Done!", icon="😍")
+                    st.balloons()
 
 
 def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
@@ -283,8 +355,6 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
                     st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
                     st.stop()
 
-                st.balloons()
-
                 with get_openai_callback() as callbacks:
                     prompt = ChatPromptTemplate.from_messages([
                         SystemMessagePromptTemplate.from_template(system_message),
@@ -307,6 +377,7 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
                     st.markdown(constants.TAB_FORM_REQUEST_STATS)
                     st.text(callbacks)
                     st.toast("Done!", icon="😍")
+                    st.balloons()
 
 
 def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
@@ -379,8 +450,6 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
                     st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
                     st.stop()
 
-                st.balloons()
-
                 with get_openai_callback() as callbacks:
                     prompt = ChatPromptTemplate.from_messages([
                         SystemMessage(system_message),
@@ -409,6 +478,7 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab, llm):
                     st.markdown(constants.TAB_FORM_REQUEST_STATS)
                     st.text(callbacks)
                     st.toast("Done!", icon="😍")
+                    st.balloons()
 
 
 def create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm):
@@ -438,8 +508,6 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm):
                     st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
                     st.stop()
 
-                st.balloons()
-
                 with get_openai_callback() as callbacks:
                     prompt = ChatPromptTemplate.from_messages([
                         SystemMessage(system_message),
@@ -462,6 +530,29 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm):
                     st.markdown(constants.TAB_FORM_REQUEST_STATS)
                     st.text(callbacks)
                     st.toast("Done!", icon="😍")
+                    st.balloons()
+
+
+# def create_annotated_text(text: str):
+#     entities = re.findall(r"\[(.*?)\]", text)
+#     labels = re.findall(r"\((.*?)\)", text)
+#
+#     for entity in entities:
+#         text = text.replace(f"[{entity}]", f"(\"{entity}\", ")
+#
+#     for label in labels:
+#         text = text.replace(f"({label})", f"\"{label}\")")
+#
+#     words = re.split(r"\((.*?)\)", text)
+#
+#     annotated_objects: list = []
+#
+#     for word in words:
+#         if word.startswith("\"") and word.endswith("\""):
+#             split = tuple(word.split(","))
+#             annotated_objects.append(split)
+#
+#     annotated_text(text)
 
 
 def is_any_field_empty(list_of_fields: list) -> bool:
@@ -478,6 +569,15 @@ def create_azure_openai_model(openai_api_key: str, temperature: float) -> AzureC
         model_name="gpt-35-turbo",
         model_version="0613",
         temperature=temperature
+    )
+
+
+def create_azure_openai_embedding_model(openai_api_key: str) -> AzureOpenAIEmbeddings:
+    return AzureOpenAIEmbeddings(
+        azure_endpoint="https://open-ai-resource-gen-ai.openai.azure.com/",
+        openai_api_version="2023-07-01-preview",
+        openai_api_key=openai_api_key,
+        openai_api_type="azure"
     )
 
 

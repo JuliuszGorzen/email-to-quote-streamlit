@@ -72,11 +72,3 @@ Can be picked up. Payment after 7 days
 ```
 
 ### *Response*
-
-```json
-{
-  "origin_location": "300283 Timisoara, Romania",
-  "destination_location": "4715-405 Braga, Portugal",
-  "weight": "155 kg"
-}
-```

@@ -102,9 +102,13 @@ TAB_FORM_HUMAN_MESSAGE = "Enter human message:"
 
 TAB_FORM_AI_MESSAGE = "Enter AI message:"
 
+TAB_FORM_FILE = "External file from the which the content will be taken:"
+
 TAB_FORM_SUBMIT_BUTTON = "Sent prompt to model :rocket:"
 
 TAB_FORM_EMPTY_FIELD_WARNING = "Please enter system or/and human message. Or copy from the example above."
+
+TAB_FORM_EMPTY_FILE_WARNING = "Please upload a file. Currently only markdown file is only supported!"
 
 TAB_FORM_BOT_RESPONSE = "#### Bot response :speech_balloon:"
 
@@ -287,3 +291,33 @@ Unloading: 4715-405 Braga, Portugal
 Can be picked up. Payment after 7 days"""
 
 # --- RAG TAB ---
+
+RAG_TAB_HEADER = ":orange[RAG] :bookmark_tabs:"
+
+RAG_TAB_FORM_HEADER = "Try RAG"
+
+RAG_TAB_SYSTEM_MESSAGE = """You are a bot that answers the following question based only on the provided context:
+
+<context>
+{context}
+</context>
+"""
+
+RAG_TAB_HUMAN_MESSAGE = "Which entities are related to the location. List all with the descriptions."
+
+RAG_TAB_EXTERNAL_FILE = """# Autonomus Quotation Entity Definitions
+This document represents the entity definitions for the Autonomus Quotation API that are needed to be able to return the quote.
+
+| Tag Name             | Tag Definition                                                                                                                                                                                                                      |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| origin_location      | (Address) First pick-up location of transport. Should contain city and country at a minimum                                                                                                                                         |
+| destination_location | (Address) Last delivery location of transport. Should contain city and country at a minimum                                                                                                                                         |
+| date_of_mail         | (Date) Date when mail was sent / received                                                                                                                                                                                           |
+| weight               | (Number) Load weight, Attribute “unit” contains one of supported weight units: Ton, Kilogram.If not specified assume 22t.                                                                                                           |
+| start_of_transport   | (DateTime) Date & time when pick-up is to happen. If not specified, assume in 5 days at 7:00am UTC.                                                                                                                                 |
+| num_activities       | (Number) Sum of the total number of pick-up & delivery locations. If not specified assume 2                                                                                                                                         |
+| transport_mode       | (String) Required mode of transportation. If not specified, assume “ROAD”. Other options are “AIR”, “RAIL”, “MULTIMODAL”, “RIVER”                                                                                                   |
+| load_type            | (String) Type of transport required. If not specified, assume Full Truck Load (FTL). Other options are Less-than Truck Load (LTL), Bulk. The later options usually apply if Note these can usually be inferred from the description |
+| vehicle_type         | (String) Type of truck used for the transport. If not specified, assume “standard”. Other options are “Reefer”, “Tanker”, “Flatbed / Open platform trucks”                                                                          |
+| hazardous_goods      | (String) Flag in case the transport contains hazardous goods. If not specified assume “No”                                                                                                                                          |
+"""

@@ -1,19 +1,21 @@
 ### *System message*
 
 Message for priming AI behavior, usually passed in as the first of a sequence of input messages.
-:green[{categories}] -> this will be replaced with the categories definitions
+:green[{context}] -> this will be replaced with the uploaded file
 
 ```text
-For each text, mark NER tags. In [] mark the entity and in () mark the tag.
-Tag categories:
-{categories}
+You are a bot that answers the following question based only on the provided context:
+
+<context>
+{context}
+</context>
 ```
 
-### *System message (categories)*
-
-Definitions.
-
+### *Uploaded file*
 ```markdown
+# Autonomus Quotation Entity Definitions
+This document represents the entity definitions for the Autonomus Quotation API that are needed to be able to return the quote.
+
 | Tag Name             | Tag Definition                                                                                                                                                                                                                      |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | origin_location      | (Address) First pick-up location of transport. Should contain city and country at a minimum                                                                                                                                         |
@@ -25,7 +27,7 @@ Definitions.
 | transport_mode       | (String) Required mode of transportation. If not specified, assume “ROAD”. Other options are “AIR”, “RAIL”, “MULTIMODAL”, “RIVER”                                                                                                   |
 | load_type            | (String) Type of transport required. If not specified, assume Full Truck Load (FTL). Other options are Less-than Truck Load (LTL), Bulk. The later options usually apply if Note these can usually be inferred from the description |
 | vehicle_type         | (String) Type of truck used for the transport. If not specified, assume “standard”. Other options are “Reefer”, “Tanker”, “Flatbed / Open platform trucks”                                                                          |
-| hazardous_goods      | (String) Flag in case the transport contains hazardous goods. If not specified assume “No” 
+| hazardous_goods      | (String) Flag in case the transport contains hazardous goods. If not specified assume “No”                                                                                                                                          |
 ```
 
 ### *Human message*
@@ -33,20 +35,15 @@ Definitions.
 Message from a human. User input that the AI will process.
 
 ```text
-Hello,
-Please send me your offer for groupage transport for:
-1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
-Loading: 300283 Timisoara, Romania
-Unloading: 4715-405 Braga, Portugal
-Can be picked up. Payment after 7 days
+Which entities are related to the location. List all with the descriptions.
 ```
 
 ### *Response*
 
 ```text
-origin_location: [300283 Timisoara, Romania] (Address)
-destination_location: [4715-405 Braga, Portugal] (Address)
-weight: [155 Kg] (Number)
-load_type: [groupage] (String)
-start_of_transport: [7 days from now] (DateTime)
+The entities related to the location are:
+
+1. origin_location: Represents the first pick-up location of the transport. It should contain at least the city and country information.
+
+2. destination_location: Represents the last delivery location of the transport. It should contain at least the city and country information.
 ```

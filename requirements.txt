@@ -8,3 +8,7 @@ langchain-community==0.0.24
 azure-core==1.30.1
 azure-identity==1.15.0
 azure-keyvault-secrets==4.8.0
+faiss-cpu==1.8.0
+unstructured==0.12.5
+Markdown==3.5.2
+st-annotated-text==4.0.1
