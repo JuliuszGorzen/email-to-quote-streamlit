@@ -219,19 +219,16 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm):
             st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
             system_message = st.text_area(
                 label=constants.TAB_FORM_SYSTEM_MESSAGE,
-                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_SYSTEM_MESSAGE,
                 height=200
             )
             ner_message = st.text_area(
                 label="NER (categories definition)",
-                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_CATEGORIES,
                 placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_CATEGORIES,
                 height=200
             )
             human_message = st.text_area(
                 label=constants.TAB_FORM_HUMAN_MESSAGE,
-                value=constants.NER_ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
                 placeholder=constants.NER_ZERO_SHOT_PROMPTING_TAB_HUMAN_MESSAGE,
                 height=200
             )
