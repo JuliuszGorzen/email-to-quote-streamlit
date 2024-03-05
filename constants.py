@@ -118,7 +118,7 @@ TAB_FORM_REQUEST_STATS = "#### Request stats :chart_with_upwards_trend::money_wi
 
 # --- ZERO-SHOT PROMPTING TAB ---
 
-ZERO_SHOT_PROMPTING_TAB_HEADER = ":orange[Zero-shot Prompting] :zero::gun:"
+ZERO_SHOT_PROMPTING_TAB_HEADER = "**:orange[Zero-shot Prompting]** :zero::gun:"
 
 ZERO_SHOT_PROMPTING_TAB_FORM_HEADER = "Try Zero-shot Prompting"
 
@@ -144,7 +144,7 @@ Can be picked up. Payment after 7 days"""
 
 # --- FEW-SHOT PROMPTING TAB ---
 
-FEW_SHOT_PROMPTING_TAB_HEADER = ":orange[Few-shot Prompting] :1234::gun:"
+FEW_SHOT_PROMPTING_TAB_HEADER = "**:orange[Few-shot Prompting]** :1234::gun:"
 
 FEW_SHOT_PROMPTING_TAB_FORM_HEADER = "Try Few-shot Prompting"
 
@@ -212,7 +212,7 @@ Can be picked up. Payment after 7 days"""
 
 # --- NER ZERO-SHOT PROMPTING TAB ---
 
-NER_ZERO_SHOT_PROMPTING_TAB_HEADER = ":orange[NER + Zero-shot Prompting] :writing_hand::heavy_plus_sign::zero::gun:"
+NER_ZERO_SHOT_PROMPTING_TAB_HEADER = "**:orange[NER + Zero-shot Prompting]** :writing_hand::heavy_plus_sign::zero::gun:"
 
 NER_ZERO_SHOT_PROMPTING_TAB_FORM_HEADER = "Try NER + Zero-shot Prompting"
 
@@ -243,7 +243,7 @@ Can be picked up. Payment after 7 days"""
 
 # -- NER FEW-SHOT PROMPTING TAB ---
 
-NER_FEW_SHOT_PROMPTING_TAB_HEADER = ":orange[NER + Few-shot Prompting] :writing_hand::heavy_plus_sign::1234::gun:"
+NER_FEW_SHOT_PROMPTING_TAB_HEADER = "**:orange[NER + Few-shot Prompting]** :writing_hand::heavy_plus_sign::1234::gun:"
 
 NER_FEW_SHOT_PROMPTING_TAB_FORM_HEADER = "Try NER + Few-shot Prompting"
 
@@ -292,7 +292,7 @@ Can be picked up. Payment after 7 days"""
 
 # --- RAG TAB ---
 
-RAG_TAB_HEADER = ":orange[RAG] :bookmark_tabs:"
+RAG_TAB_HEADER = "**:orange[RAG]** :bookmark_tabs:"
 
 RAG_TAB_FORM_HEADER = "Try RAG"
 
