@@ -34,7 +34,6 @@ def main() -> None:
     create_login_page(authenticator)
 
     if st.session_state["authentication_status"]:
-        # Display expandable menu
         st.markdown(constants.DISPLAY_SIDEBAR_HTML, unsafe_allow_html=True)
 
         create_logout_button(authenticator)
@@ -90,16 +89,11 @@ def create_sidebar() -> None:
         )
         openai_api_key_val = st.text_input(
             label=constants.SIDEBAR_FORM_OPENAI_API_KEY,
-            placeholder="<api-key>",
+            value="<api-key>",
             type="password",
             help=constants.SIDEBAR_FORM_OPENAI_API_KEY_HELP,
             disabled=True
         )
-
-        # For now there is only one llm
-        # if openai_api_key_val == "":
-        #     st.warning(constants.SIDEBAR_FORM_OPENAI_API_KEY_WARNING)
-
         st.text_input(
             label=constants.SIDEBAR_FORM_OPENAI_API_TYPE,
             value="azure",
@@ -124,9 +118,10 @@ def create_sidebar() -> None:
             label=constants.SIDEBAR_FORM_TEMPERATURE,
             min_value=0.0,
             max_value=1.0,
-            value=0.5,
+            value=0.2,
             step=0.01,
-            help=constants.SIDEBAR_FORM_TEMPERATURE_HELP
+            help=constants.SIDEBAR_FORM_TEMPERATURE_HELP,
+            disabled=True
         )
         submitted = st.form_submit_button(
             label=constants.SIDEBAR_FORM_SUBMIT_BUTTON,
@@ -175,7 +170,7 @@ def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmb
                 mime='text/markdown',
             )
 
-        with st.expander(constants.RAG_TAB_HEADER):
+        with st.expander(constants.RAG_TAB_HEADER, expanded=True):
             with st.form("rag_form", border=False):
                 st.header(constants.RAG_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -262,7 +257,7 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureCha
                 "Can be picked up. Payment after 7 days"
             )
 
-        with st.expander(constants.NER_FEW_SHOT_PROMPTING_TAB_HEADER):
+        with st.expander(constants.NER_FEW_SHOT_PROMPTING_TAB_HEADER, expanded=True):
             with st.form("ner_few_shot_prompting_form", border=False):
                 st.header(constants.NER_FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -342,7 +337,7 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureC
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-example.md"))
 
-        with st.expander(constants.NER_ZERO_SHOT_PROMPTING_TAB_HEADER):
+        with st.expander(constants.NER_ZERO_SHOT_PROMPTING_TAB_HEADER, expanded=True):
             with st.form("ner_zero_shot_prompting_form", border=False):
                 st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -381,12 +376,7 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureC
                             response = chain.invoke(input={"categories": ner_message})
 
                         st.markdown(constants.TAB_FORM_BOT_RESPONSE)
-
-                        try:
-                            st.json(json.loads(response.content))
-                        except ValueError:
-                            st.text(response.content)
-
+                        st.text(response.content)
                         st.markdown(constants.TAB_FORM_FULL_PROMPT)
                         st.text(prompt.format(categories=ner_message))
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
@@ -403,7 +393,7 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpe
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/few-shot-prompting-example.md"))
 
-        with st.expander(constants.FEW_SHOT_PROMPTING_TAB_HEADER):
+        with st.expander(constants.FEW_SHOT_PROMPTING_TAB_HEADER, expanded=True):
             with st.form("few_shot_prompting_form", border=False):
                 st.header(constants.FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -513,7 +503,7 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatO
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/zero-shot-prompting-example.md"))
 
-        with st.expander(constants.ZERO_SHOT_PROMPTING_TAB_HEADER):
+        with st.expander(constants.ZERO_SHOT_PROMPTING_TAB_HEADER, expanded=True):
             with st.form("zero_shot_prompting_form", border=False):
                 st.header(constants.ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -561,22 +551,13 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatO
 
 
 def create_annotated_text(text: str):
-    entities = re.findall(r"\[(.*?)\]", text)
-    labels = re.findall(r"\((.*?)\)", text)
-
-    for entity in entities:
-        text = text.replace(f"[{entity}]", f"({str(entity)},")
-
-    for label in labels:
-        text = text.replace(f"({label})", f"{str(label)})")
-
-    words = re.split(r"\((.*?)\)", text)
+    entities = re.findall(r"\[(.*?)\]\((.*?)\)", text)
+    words = re.split("\[(.*?)\)", text)
 
     for word in words:
-        for label in labels:
-            if label == word.split(",")[-1]:
-                split = (word.split(",", 1)[0], label)
-                words[words.index(word)] = tuple(split)
+        for entity in entities:
+            if entity[0] in word and entity[1] in word:
+                words[words.index(word)] = entity
 
     annotated_text(words)
 
@@ -617,18 +598,14 @@ def create_page_config() -> None:
 
 
 def remove_unused_html() -> None:
-    # Hide Streamlit main menu, header and footer
     st.markdown(constants.HIDE_STREAMLIT_ELEMENTS, unsafe_allow_html=True)
-    # Hide expandable menu
     st.markdown(constants.HIDE_SIDEBAR_HTML, unsafe_allow_html=True)
 
 
 def create_authenticator() -> stauth.Authenticate:
-    # Load authentication credentials from .yaml file
     with open("authentication.yaml") as file:
         config = yaml.load(file, Loader=SafeLoader)
 
-    # create an instance of the Authenticate class with the credentials
     return stauth.Authenticate(
         config["credentials"],
         config["cookie"]["name"],
