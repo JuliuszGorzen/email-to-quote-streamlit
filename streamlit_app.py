@@ -1,6 +1,7 @@
 import json
 import re
 
+from localStoragePy import localStoragePy
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
@@ -25,8 +26,8 @@ def main() -> None:
     secret_client = SecretClient(vault_url="https://genai-dev-keyvault.vault.azure.net/", credential=credential)
     openai_api_key_secret = secret_client.get_secret("aikey")
 
-    if 'ai' not in st.session_state:
-        st.session_state.ai = openai_api_key_secret
+    local_storage = localStoragePy('your-app-namespace', 'your-storage-backend')
+    local_storage.setItem("aikey", openai_api_key_secret)
 
     llm = create_azure_openai_model(openai_api_key_secret, 0.2)
     embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret)
