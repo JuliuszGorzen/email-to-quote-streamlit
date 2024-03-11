@@ -21,19 +21,14 @@ import constants
 
 
 def main() -> None:
+    create_page_config()
+
     credential = DefaultAzureCredential()
     secret_client = SecretClient(vault_url="https://genai-dev-keyvault.vault.azure.net/", credential=credential)
-    openai_api_key_secret = secret_client.get_secret("aikey")
-    st.warning(openai_api_key_secret)
+    openai_api_key_secret = secret_client.get_secret("aikey").value
+    llm = create_azure_openai_model(openai_api_key_secret, 0.2)
+    embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret)
 
-    try:
-        llm = create_azure_openai_model(openai_api_key_secret.value, 0.2)
-        embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret.value)
-    except KeyError:
-        llm = create_azure_openai_model("", 0.2)
-        embedding_llm = create_azure_openai_embedding_model("")
-
-    create_page_config()
     remove_unused_html()
 
     authenticator = create_authenticator()
