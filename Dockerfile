@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://gitlab.office.transporeon.com/juliusz.gorzen/email-to-quote-streamlit.git .
+RUN git clone https://github.com/JuliuszGorzen/email-to-quote-streamlit.git .
 
 RUN pip3 install -r requirements.txt
 
