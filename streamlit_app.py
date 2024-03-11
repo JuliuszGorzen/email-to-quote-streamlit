@@ -23,7 +23,11 @@ import constants
 def main() -> None:
     credential = DefaultAzureCredential()
     secret_client = SecretClient(vault_url="https://genai-dev-keyvault.vault.azure.net/", credential=credential)
-    openai_api_key_secret = secret_client.get_secret("openai-api-key").value
+    openai_api_key_secret = secret_client.get_secret("aikey")
+
+    if 'ai' not in st.session_state:
+        st.session_state.ai = openai_api_key_secret
+
     llm = create_azure_openai_model(openai_api_key_secret, 0.2)
     embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret)
 
