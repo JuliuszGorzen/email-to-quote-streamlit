@@ -16,14 +16,25 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from yaml.loader import SafeLoader
+import logging
+import sys
 
 import constants
 
 
 def main() -> None:
+    logger = logging.getLogger("azure")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    logger.addHandler(handler)
+
     credential = DefaultAzureCredential()
-    secret_client = SecretClient(vault_url="https://genai-dev-keyvault.vault.azure.net/", credential=credential)
-    openai_api_key_secret = secret_client.get_secret("openai-api-key").value
+    secret_client = SecretClient(
+        vault_url="https://genai-dev-keyvault.vault.azure.net/",
+        credential=credential,
+        logging_enable=True
+    )
+    openai_api_key_secret = secret_client.get_secret("aikey").value
     llm = create_azure_openai_model(openai_api_key_secret, 0.2)
     embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret)
 
