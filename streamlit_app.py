@@ -29,14 +29,13 @@ def main() -> None:
     llm = create_azure_openai_model(openai_api_key_secret, 0.2)
     embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret)
 
-    remove_unused_html()
+    hide_sidebar()
 
     authenticator = create_authenticator()
     create_login_page(authenticator)
 
     if st.session_state["authentication_status"]:
-        st.markdown(constants.DISPLAY_SIDEBAR_HTML, unsafe_allow_html=True)
-
+        display_sidebar()
         create_logout_button(authenticator)
         create_main_page()
         create_sidebar()
@@ -65,8 +64,24 @@ def create_login_page(authenticator: stauth.Authenticate) -> None:
 
 def create_main_page() -> None:
     st.title(constants.MAIN_PAGE_HEADER)
-    with st.expander(constants.MAIN_PAGE_EXPANDER):
-        st.markdown(read_md_file("markdowns/main-page-description.md"))
+
+    with st.expander(constants.HOW_TO_START_EXPANDER):
+        st.markdown(read_md_file("markdowns/how-to-start-description.md"))
+
+    with st.expander(constants.IMPORTANT_FILES_EXPANDER):
+        st.markdown(read_md_file("markdowns/important-files-description.md"))
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            with open("important-files/example_markdown_rag.md", "r", encoding="utf-8") as file:
+                st.download_button(
+                    label="Example .md file (RAG) :bookmark_tabs:",
+                    data=file,
+                    file_name="example_markdown_rag.md",
+                    mime="text/markdown"
+                )
+            st.caption("Download the example .md file to use it in the RAG tab")
 
 
 def create_sidebar() -> None:
@@ -160,18 +175,14 @@ def create_tabs(llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> N
 def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> None:
     with rag:
         st.header(constants.RAG_TAB_HEADER)
-        st.markdown(read_md_file("markdowns/rag-description.md"))
+
+        with st.expander(constants.TAB_DESCRIPTION_EXPANDER_TEXT, expanded=True):
+            st.markdown(read_md_file("markdowns/rag-description.md"))
 
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/rag-example.md"))
-            st.download_button(
-                label="Download example markdown file :bookmark_tabs:",
-                data=constants.RAG_TAB_EXTERNAL_FILE,
-                file_name='example_markdown_rag.md',
-                mime='text/markdown',
-            )
 
-        with st.expander(constants.RAG_TAB_HEADER, expanded=True):
+        with st.expander(constants.TAB_FORM_EXPANDER_TEXT):
             with st.form("rag_form", border=False):
                 st.header(constants.RAG_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -236,14 +247,18 @@ def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmb
                         st.text(prompt.format(context=[d.page_content for d in docs][0], input=human_message))
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
-                        st.toast("Done!", icon="😍")
-                        st.balloons()
+                        create_success_toast()
+
+        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/stats-description.md"))
 
 
 def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureChatOpenAI) -> None:
     with ner_few_shot_prompting:
         st.header(constants.NER_FEW_SHOT_PROMPTING_TAB_HEADER)
-        st.markdown(read_md_file("markdowns/ner-few-shot-prompting-description.md"))
+
+        with st.expander(constants.TAB_DESCRIPTION_EXPANDER_TEXT, expanded=True):
+            st.markdown(read_md_file("markdowns/ner-few-shot-prompting-description.md"))
 
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/ner-few-shot-prompting-example.md"))
@@ -258,7 +273,7 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureCha
                 "Can be picked up. Payment after 7 days"
             )
 
-        with st.expander(constants.NER_FEW_SHOT_PROMPTING_TAB_HEADER, expanded=True):
+        with st.expander(constants.TAB_FORM_EXPANDER_TEXT):
             with st.form("ner_few_shot_prompting_form", border=False):
                 st.header(constants.NER_FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -326,19 +341,23 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureCha
                         st.text(prompt.format(categories=ner_message))
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
-                        st.toast("Done!", icon="😍")
-                        st.balloons()
+                        create_success_toast()
+
+        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/stats-description.md"))
 
 
 def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureChatOpenAI) -> None:
     with ner_zero_shot_prompting:
         st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_HEADER)
-        st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
+
+        with st.expander(constants.TAB_DESCRIPTION_EXPANDER_TEXT, expanded=True):
+            st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-description.md"))
 
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/ner-zero-shot-prompting-example.md"))
 
-        with st.expander(constants.NER_ZERO_SHOT_PROMPTING_TAB_HEADER, expanded=True):
+        with st.expander(constants.TAB_FORM_EXPANDER_TEXT):
             with st.form("ner_zero_shot_prompting_form", border=False):
                 st.header(constants.NER_ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -382,19 +401,23 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureC
                         st.text(prompt.format(categories=ner_message))
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
-                        st.toast("Done!", icon="😍")
-                        st.balloons()
+                        create_success_toast()
+
+        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/stats-description.md"))
 
 
 def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpenAI) -> None:
     with few_shot_prompting_tab:
         st.header(constants.FEW_SHOT_PROMPTING_TAB_HEADER)
-        st.markdown(read_md_file("markdowns/few-shot-prompting-description.md"))
+
+        with st.expander(constants.TAB_DESCRIPTION_EXPANDER_TEXT, expanded=True):
+            st.markdown(read_md_file("markdowns/few-shot-prompting-description.md"))
 
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/few-shot-prompting-example.md"))
 
-        with st.expander(constants.FEW_SHOT_PROMPTING_TAB_HEADER, expanded=True):
+        with st.expander(constants.TAB_FORM_EXPANDER_TEXT):
             with st.form("few_shot_prompting_form", border=False):
                 st.header(constants.FEW_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -492,19 +515,23 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpe
                         st.text(prompt.format())
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
-                        st.toast("Done!", icon="😍")
-                        st.balloons()
+                        create_success_toast()
+
+        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/stats-description.md"))
 
 
 def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatOpenAI) -> None:
     with zero_shot_prompting_tab:
         st.header(constants.ZERO_SHOT_PROMPTING_TAB_HEADER)
-        st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
+
+        with st.expander(constants.TAB_DESCRIPTION_EXPANDER_TEXT, expanded=True):
+            st.markdown(read_md_file("markdowns/zero-shot-prompting-description.md"))
 
         with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/zero-shot-prompting-example.md"))
 
-        with st.expander(constants.ZERO_SHOT_PROMPTING_TAB_HEADER, expanded=True):
+        with st.expander(constants.TAB_FORM_EXPANDER_TEXT):
             with st.form("zero_shot_prompting_form", border=False):
                 st.header(constants.ZERO_SHOT_PROMPTING_TAB_FORM_HEADER)
                 system_message = st.text_area(
@@ -547,11 +574,17 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatO
                         st.text(prompt.format())
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
-                        st.toast("Done!", icon="😍")
-                        st.balloons()
+                        create_success_toast()
+
+        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
+            st.markdown(read_md_file("markdowns/stats-description.md"))
 
 
-def create_annotated_text(text: str):
+def create_success_toast() -> None:
+    st.toast("Success!", icon="🎉")
+
+
+def create_annotated_text(text: str) -> None:
     entities = re.findall(r"\[(.*?)\]\((.*?)\)", text)
     words = re.split("\[(.*?)\)", text)
 
@@ -594,13 +627,21 @@ def create_page_config() -> None:
         page_title="Email to Quote 📧➡️💰",
         page_icon="📧",
         layout="wide",
-        initial_sidebar_state="collapsed"
+        initial_sidebar_state="collapsed",
+        menu_items={
+            "Get Help": "https://www.transporeon.com/en",
+            "Report a bug": "https://www.transporeon.com/en",
+            "About": constants.MAIN_MENU_ABOUT
+        }
     )
 
 
-def remove_unused_html() -> None:
-    st.markdown(constants.HIDE_STREAMLIT_ELEMENTS, unsafe_allow_html=True)
-    st.markdown(constants.HIDE_SIDEBAR_HTML, unsafe_allow_html=True)
+def hide_sidebar() -> None:
+    st.markdown(constants.HIDE_SIDEBAR_AND_DEPLOY_HTML, unsafe_allow_html=True)
+
+
+def display_sidebar() -> None:
+    st.markdown(constants.DISPLAY_SIDEBAR_HTML, unsafe_allow_html=True)
 
 
 def create_authenticator() -> stauth.Authenticate:

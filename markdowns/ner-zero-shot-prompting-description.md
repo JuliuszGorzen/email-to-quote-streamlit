@@ -1,5 +1,3 @@
-### Description :pencil2:
-
 NER - Named entity recognition (NER) is a natural language processing (NLP) method that extracts information from text. 
 NER involves detecting and categorizing important information in text known as named entities.
 

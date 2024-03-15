@@ -1,8 +1,3 @@
-[theme]
-base="dark"
-primaryColor="#f6c321"
-font="monospace"
-
 [browser]
 gatherUsageStats = false
 

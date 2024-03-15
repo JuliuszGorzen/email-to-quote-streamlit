@@ -1,8 +1,12 @@
 # --- HTML ---
 
-HIDE_SIDEBAR_HTML = """
+HIDE_SIDEBAR_AND_DEPLOY_HTML = """
 <style>
     [data-testid="collapsedControl"] {
+        display: none
+    }
+    footer {visibility: hidden;}
+    [data-testid="stDeployButton"] {
         display: none
     }
 </style>
@@ -14,14 +18,6 @@ DISPLAY_SIDEBAR_HTML = """
         display: grid
     }
 </style>
-"""
-
-HIDE_STREAMLIT_ELEMENTS = """
-<style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-</style>            
 """
 
 # --- LOGIN/LOGOUT PAGE ---
@@ -40,7 +36,11 @@ LOGOUT_BUTTON_TEXT = "Leave AI world :disappointed_relieved::broken_heart:"
 
 MAIN_PAGE_HEADER = "Email to Quote :e-mail::arrow_right::moneybag:"
 
-MAIN_PAGE_EXPANDER = "**:rainbow[How to start?]** :thinking_face:"
+HOW_TO_START_EXPANDER = "**How to start?** :thinking_face:"
+
+IMPORTANT_FILES_EXPANDER = "**Important files** :open_file_folder:"
+
+MAIN_MENU_ABOUT = "This app allows you to test different prompt techniques for the LLM model."
 
 # --- SIDEBAR ---
 
@@ -94,7 +94,13 @@ TAB_NAME_NER_FEW_SHOT_PROMPTING = "NER + Few-shot Prompting :writing_hand::heavy
 
 TAB_NAME_RAG = "RAG :bookmark_tabs:"
 
-TAB_EXAMPLE_EXPANDER_TEXT = "**See example** :eyes::eyes::eyes:"
+TAB_DESCRIPTION_EXPANDER_TEXT = "**Description** :pencil2:"
+
+TAB_EXAMPLE_EXPANDER_TEXT = "**See example** :eyes:"
+
+TAB_FORM_EXPANDER_TEXT = "**Try it yourself** :rocket:"
+
+TAB_STATS_EXPANDER_TEXT = "**Stats** :bar_chart:"
 
 TAB_FORM_SYSTEM_MESSAGE = "Enter system message:"
 
@@ -118,7 +124,7 @@ TAB_FORM_REQUEST_STATS = "#### Request stats :chart_with_upwards_trend::money_wi
 
 # --- ZERO-SHOT PROMPTING TAB ---
 
-ZERO_SHOT_PROMPTING_TAB_HEADER = "**:orange[Zero-shot Prompting]** :zero::gun:"
+ZERO_SHOT_PROMPTING_TAB_HEADER = "**Zero-shot Prompting** :zero::gun:"
 
 ZERO_SHOT_PROMPTING_TAB_FORM_HEADER = "Try Zero-shot Prompting"
 
@@ -144,7 +150,7 @@ Can be picked up. Payment after 7 days"""
 
 # --- FEW-SHOT PROMPTING TAB ---
 
-FEW_SHOT_PROMPTING_TAB_HEADER = "**:orange[Few-shot Prompting]** :1234::gun:"
+FEW_SHOT_PROMPTING_TAB_HEADER = "**Few-shot Prompting** :1234::gun:"
 
 FEW_SHOT_PROMPTING_TAB_FORM_HEADER = "Try Few-shot Prompting"
 
@@ -212,7 +218,7 @@ Can be picked up. Payment after 7 days"""
 
 # --- NER ZERO-SHOT PROMPTING TAB ---
 
-NER_ZERO_SHOT_PROMPTING_TAB_HEADER = "**:orange[NER + Zero-shot Prompting]** :writing_hand::heavy_plus_sign::zero::gun:"
+NER_ZERO_SHOT_PROMPTING_TAB_HEADER = "**NER + Zero-shot Prompting** :writing_hand::heavy_plus_sign::zero::gun:"
 
 NER_ZERO_SHOT_PROMPTING_TAB_FORM_HEADER = "Try NER + Zero-shot Prompting"
 
@@ -243,7 +249,7 @@ Can be picked up. Payment after 7 days"""
 
 # -- NER FEW-SHOT PROMPTING TAB ---
 
-NER_FEW_SHOT_PROMPTING_TAB_HEADER = "**:orange[NER + Few-shot Prompting]** :writing_hand::heavy_plus_sign::1234::gun:"
+NER_FEW_SHOT_PROMPTING_TAB_HEADER = "**NER + Few-shot Prompting** :writing_hand::heavy_plus_sign::1234::gun:"
 
 NER_FEW_SHOT_PROMPTING_TAB_FORM_HEADER = "Try NER + Few-shot Prompting"
 
@@ -292,7 +298,7 @@ Can be picked up. Payment after 7 days"""
 
 # --- RAG TAB ---
 
-RAG_TAB_HEADER = "**:orange[RAG]** :bookmark_tabs:"
+RAG_TAB_HEADER = "**RAG** :bookmark_tabs:"
 
 RAG_TAB_FORM_HEADER = "Try RAG"
 
@@ -304,20 +310,3 @@ RAG_TAB_SYSTEM_MESSAGE = """You are a bot that answers the following question ba
 """
 
 RAG_TAB_HUMAN_MESSAGE = "Which entities are related to the location. List all with the descriptions."
-
-RAG_TAB_EXTERNAL_FILE = """# Autonomus Quotation Entity Definitions
-This document represents the entity definitions for the Autonomus Quotation API that are needed to be able to return the quote.
-
-| Tag Name             | Tag Definition                                                                                                                                                                                                                      |
-|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| origin_location      | (Address) First pick-up location of transport. Should contain city and country at a minimum                                                                                                                                         |
-| destination_location | (Address) Last delivery location of transport. Should contain city and country at a minimum                                                                                                                                         |
-| date_of_mail         | (Date) Date when mail was sent / received                                                                                                                                                                                           |
-| weight               | (Number) Load weight, Attribute “unit” contains one of supported weight units: Ton, Kilogram.If not specified assume 22t.                                                                                                           |
-| start_of_transport   | (DateTime) Date & time when pick-up is to happen. If not specified, assume in 5 days at 7:00am UTC.                                                                                                                                 |
-| num_activities       | (Number) Sum of the total number of pick-up & delivery locations. If not specified assume 2                                                                                                                                         |
-| transport_mode       | (String) Required mode of transportation. If not specified, assume “ROAD”. Other options are “AIR”, “RAIL”, “MULTIMODAL”, “RIVER”                                                                                                   |
-| load_type            | (String) Type of transport required. If not specified, assume Full Truck Load (FTL). Other options are Less-than Truck Load (LTL), Bulk. The later options usually apply if Note these can usually be inferred from the description |
-| vehicle_type         | (String) Type of truck used for the transport. If not specified, assume “standard”. Other options are “Reefer”, “Tanker”, “Flatbed / Open platform trucks”                                                                          |
-| hazardous_goods      | (String) Flag in case the transport contains hazardous goods. If not specified assume “No”                                                                                                                                          |
-"""
