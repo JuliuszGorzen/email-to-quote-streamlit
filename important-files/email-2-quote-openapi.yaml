@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: Email to Quote
+  description: >-
+    This is a sample "Email to Quote" Server based on the OpenAPI 3.0
+    specification.  You can find out more about Swagger at
+    [https://swagger.io](https://swagger.io). 
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: apiteam@swagger.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.0.1
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: https://email2quote.swagger.io/api/v3
+tags:
+  - name: quote
+    description: Quote tag description
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+paths:
+  /quote:
+    post:
+      tags:
+        - quote
+      summary: Generate a quote
+      description: Add a new quote
+      operationId: quote
+      requestBody:
+        description: Create a new quote
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Transport'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transport'
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+components:
+  schemas:
+    Pallet:
+      type: object
+      description: Array of objects (pallet) that have amount and type of pallets.
+      properties:
+        amount:
+          type: integer
+          description: Amount of pallets.
+          format: int32
+          default: 0
+        type:
+          type: string
+          description: Type of pallets.
+          enum:
+            - Empty Pallets
+            - EUR-EPAL Pallets
+            - pallet 800x1200
+            - pallet 1140x1140
+            - pallet 42x42
+            - pallet 48x48
+            - pallet 42x42
+            - pallet 1125x1160
+            - pallet 767x1060
+            - pallet 1160x2200
+            - pallet 1000x1075
+            - pallet 1165x1165
+    Transport:
+      type: object
+      properties:
+        origin_location:
+          type: string
+          description: First pick-up location. Address.
+          default: ''
+        destination_location:
+          type: string
+          description: Last delivery location. Address.
+          default: ''
+        currency:
+          type: string
+          description: Currency for the pricing.
+          enum:
+            - NZD
+            - USD
+            - EUR
+            - AUD
+            - PLN
+            - JPY
+            - CAD
+            - MXN
+            - RUB
+            - COP
+            - GBP
+            - CHF
+            - HUF
+            - RON
+            - CZK
+            - HRK
+            - RSD
+            - BGN
+            - DKK
+            - SEK
+            - TRY
+            - UAH
+          default: EUR
+        distance:
+          type: integer
+          description: Distance between first origin and last destination in kilometers.
+          format: int32
+          default: 0
+        transport_type:
+          type: string
+          description: Type of transport service.
+          enum:
+            - FTL
+            - LTL
+          default: FTL
+        trailer_type:
+          type: string
+          description: Type of trailer used for transport.
+          enum:
+            - 13.6 curtain trailer
+            - 7.5t
+            - 12t
+            - mega trailer
+            - fridge trailer
+          default: 13.6 curtain trailer
+        dangerous_hazardous:
+          type: string
+          description: Product that has a Hazmat, IMDG classification and requires special handling.
+          enum:
+            - Yes
+            - No
+            - Chemicals Hazmat
+            - Appliances
+          default: No
+        cargo_type:
+          type: string
+          description: Type of cargo.
+          default: General
+        steps:
+          type: array
+          description: Array of additional stops in the event.
+          default: []
+          items:
+            type: string
+        validity_date:
+          type: string
+          description: Date that offer is valid until.
+          format: date-time
+          default: ''
+        loading_date:
+          type: string
+          description: Date when the transport starts.
+          format: date-time
+          default: ''
+        arrival_date:
+          type: string
+          description: Date when the transport end.
+          format: date-time
+          default: ''
+        weight:
+          type: integer
+          description: Weight of the cargo in kg.
+          format: int32
+          default: 0
+        volume:
+          type: integer
+          description: Volume of the cargo in m3 (cmb).)
+          format: int32
+          default: 0
+        pallets:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/Pallet'
+        vehicle_loading_method:
+          type: string
+          description: Requirements of how a vehicle is to be loaded and unloaded.
+          enum:
+            - vehicle side loading
+            - vehicle rear loading
+            - vehicle top loading
+            - Side or Rear loading
+            - All loading methods
+            - Top loading in Extendable trailer
+          default: vehicle rear loading
+        temperature_requirements:
+          type: array
+          description: Allowed Temperature Range
+          items:
+            type: integer
+            format: int32
+            minimum: -273
+            maximum: 1000
+          minItems: 0
+          maxItems: 2
+          default: []
+        seals:
+          type: boolean
+          description: The vehicle's doors can be sealed by the cargo owner after loading and not accessible until delivery.
+          example: false
+  requestBodies:
+    Transport:
+      description: Transport object that needs to be added to the quote
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Transport'

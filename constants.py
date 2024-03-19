@@ -40,6 +40,8 @@ HOW_TO_START_EXPANDER = "**How to start?** :thinking_face:"
 
 IMPORTANT_FILES_EXPANDER = "**Important files** :open_file_folder:"
 
+DATASET_EXPANDER = "**Dataset** :bar_chart:"
+
 MAIN_MENU_ABOUT = "This app allows you to test different prompt techniques for the LLM model."
 
 # --- SIDEBAR ---
@@ -120,7 +122,7 @@ TAB_FORM_BOT_RESPONSE = "#### Bot response :speech_balloon:"
 
 TAB_FORM_FULL_PROMPT = "#### Full prompt :capital_abcd:"
 
-TAB_FORM_REQUEST_STATS = "#### Request stats :chart_with_upwards_trend::money_with_wings:"
+TAB_FORM_REQUEST_STATS = "#### Request stats/costs :chart_with_upwards_trend::money_with_wings:"
 
 # --- ZERO-SHOT PROMPTING TAB ---
 

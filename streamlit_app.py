@@ -1,6 +1,9 @@
 import json
 import re
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
@@ -15,6 +18,9 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
+from sklearn import datasets, svm
+from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.model_selection import train_test_split
 from yaml.loader import SafeLoader
 
 import constants
@@ -82,6 +88,33 @@ def create_main_page() -> None:
                     mime="text/markdown"
                 )
             st.caption("Download the example .md file to use it in the RAG tab")
+
+        with col2:
+            with open("important-files/email-2-quote-dataset.xlsx", "rb") as file:
+                st.download_button(
+                    label="Dataset .xlsx file :bar_chart:",
+                    data=file,
+                    file_name="email-2-quote-dataset.xlsx",
+                    mime="application/vnd.ms-excel"
+                )
+            st.caption("Download dataset file with sample emails")
+
+        with col3:
+            with open("important-files/email-2-quote-openapi.json", "r", encoding="utf-8") as file:
+                st.download_button(
+                    label="OpenAPI schema :book:",
+                    data=file,
+                    file_name="email-2-quote-openapi.json",
+                    mime="application/json"
+                )
+            st.caption("Download OpenAPI schema")
+
+    with st.expander(constants.DATASET_EXPANDER):
+        df_emails = pd.read_excel("important-files/email-2-quote-dataset.xlsx", "mails")
+        st.dataframe(df_emails, use_container_width=True)
+
+        df_objects = pd.read_excel("important-files/email-2-quote-dataset.xlsx", "objects").astype(str)
+        st.dataframe(df_objects, use_container_width=True)
 
 
 def create_sidebar() -> None:
@@ -244,7 +277,10 @@ def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmb
                         st.markdown(constants.TAB_FORM_BOT_RESPONSE)
                         st.text(response["answer"])
                         st.markdown(constants.TAB_FORM_FULL_PROMPT)
-                        st.text(prompt.format(context=[d.page_content for d in docs][0], input=human_message))
+                        st.code(
+                            prompt.format(context=[d.page_content for d in docs][0], input=human_message),
+                            language="text"
+                        )
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
@@ -338,7 +374,7 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureCha
                         st.markdown(constants.TAB_FORM_BOT_RESPONSE)
                         create_annotated_text(response.content)
                         st.markdown(constants.TAB_FORM_FULL_PROMPT)
-                        st.text(prompt.format(categories=ner_message))
+                        st.code(prompt.format(categories=ner_message), language="text")
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
@@ -398,7 +434,7 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureC
                         st.markdown(constants.TAB_FORM_BOT_RESPONSE)
                         st.text(response.content)
                         st.markdown(constants.TAB_FORM_FULL_PROMPT)
-                        st.text(prompt.format(categories=ner_message))
+                        st.code(prompt.format(categories=ner_message), language="text")
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
@@ -512,7 +548,7 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpe
                             st.text(response.content)
 
                         st.markdown(constants.TAB_FORM_FULL_PROMPT)
-                        st.text(prompt.format())
+                        st.code(prompt.format(), language="text")
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
@@ -571,13 +607,48 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatO
                             st.text(response.content)
 
                         st.markdown(constants.TAB_FORM_FULL_PROMPT)
-                        st.text(prompt.format())
+                        st.code(prompt.format(), language="text")
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
 
         with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/stats-description.md"))
+
+            # import some data to play with
+            iris = datasets.load_iris()
+            X = iris.data
+            y = iris.target
+            class_names = iris.target_names
+
+            # Split the data into a training set and a test set
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            # Run classifier, using a model that is too regularized (C too low) to see
+            # the impact on the results
+            classifier = svm.SVC(kernel="linear", C=0.01).fit(X_train, y_train)
+
+            np.set_printoptions(precision=2)
+
+            # Plot non-normalized confusion matrix
+            titles_options = [
+                ("Confusion matrix, without normalization", None),
+                ("Normalized confusion matrix", "true"),
+            ]
+            for title, normalize in titles_options:
+                disp = ConfusionMatrixDisplay.from_estimator(
+                    classifier,
+                    X_test,
+                    y_test,
+                    display_labels=class_names,
+                    cmap=plt.cm.Blues,
+                    normalize=normalize,
+                )
+                disp.ax_.set_title(title)
+
+                plt.rcParams["figure.figsize"] = (6, 3)
+
+            st.pyplot(plt, use_container_width=False)
 
 
 def create_success_toast() -> None:
