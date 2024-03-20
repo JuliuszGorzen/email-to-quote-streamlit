@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
-from annotated_text import annotated_text
+from annotated_text import annotated_text, annotation
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from langchain.chains import create_retrieval_chain
@@ -69,7 +69,13 @@ def create_login_page(authenticator: stauth.Authenticate) -> None:
 
 
 def create_main_page() -> None:
-    st.title(constants.MAIN_PAGE_HEADER)
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.title(constants.MAIN_PAGE_HEADER)
+
+    with col2:
+        annotated_text(annotation("version", "0.0.4", "#FFAAAA", font_size="1.5rem", float="right"))
 
     with st.expander(constants.HOW_TO_START_EXPANDER):
         st.markdown(read_md_file("markdowns/how-to-start-description.md"))
