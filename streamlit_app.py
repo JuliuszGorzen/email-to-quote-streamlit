@@ -12,12 +12,12 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.text_splitter import MarkdownHeaderTextSplitter
 from langchain_community.callbacks import get_openai_callback
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
+from langchain_text_splitters import MarkdownHeaderTextSplitter
 from sklearn import datasets, svm
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.model_selection import train_test_split
@@ -102,14 +102,32 @@ def create_main_page() -> None:
         with col3:
             with open("important-files/email-2-quote-openapi.json", "r", encoding="utf-8") as file:
                 st.download_button(
-                    label="OpenAPI schema :book:",
+                    label="OpenAPI .json schema :book:",
                     data=file,
                     file_name="email-2-quote-openapi.json",
                     mime="application/json"
                 )
-            st.caption("Download OpenAPI schema")
+            st.caption("Download OpenAPI schema (JSON)")
 
-    with st.expander(constants.DATASET_EXPANDER):
+            with open("important-files/email-2-quote-openapi.yaml", "r", encoding="utf-8") as file:
+                st.download_button(
+                    label="OpenAPI .yaml schema :book:",
+                    data=file,
+                    file_name="email-2-quote-openapi.yaml",
+                    mime="application/x-yaml"
+                )
+            st.caption("Download OpenAPI schema (YAML)")
+
+            with open("important-files/email-2-quote-openapi-one-line.json", "r", encoding="utf-8") as file:
+                st.download_button(
+                    label="OpenAPI .json schema :book:",
+                    data=file,
+                    file_name="email-2-quote-openapi-one-line.json",
+                    mime="application/json"
+                )
+            st.caption("Download OpenAPI schema (JSON - one line)")
+
+    with st.expander(constants.DATASETS_EXPANDER):
         df_emails = pd.read_excel("important-files/email-2-quote-dataset.xlsx", "mails")
         st.dataframe(df_emails, use_container_width=True)
 
@@ -244,24 +262,19 @@ def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmb
                 submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
 
                 if submitted:
-                    if is_any_field_empty([system_message, human_message]):
+                    if is_any_field_empty([system_message, human_message]) or external_file is None:
                         st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
                         st.stop()
 
-                    if external_file is None:
-                        st.warning(constants.TAB_FORM_EMPTY_FILE_WARNING)
-                        st.stop()
-
                     with get_openai_callback() as callbacks:
-                        headers_to_split_on = [
-                            ("#", "Header 1"),
-                            ("##", "Header 2"),
-                            ("###", "Header 3"),
-                            ("####", "Header 4")
-                        ]
-                        document = external_file.read().decode("utf-8")
-
                         with st.spinner("Generating response..."):
+                            headers_to_split_on = [
+                                ("#", "Header 1"),
+                                ("##", "Header 2"),
+                                ("###", "Header 3"),
+                                ("####", "Header 4")
+                            ]
+                            document = external_file.read().decode("utf-8")
                             markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
                             docs = markdown_splitter.split_text(document)
                             vectorstore = FAISS.from_documents(docs, embedding_llm)
@@ -275,7 +288,12 @@ def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmb
                             response = retrieval_chain.invoke({"context": docs, "input": human_message})
 
                         st.markdown(constants.TAB_FORM_BOT_RESPONSE)
-                        st.text(response["answer"])
+
+                        try:
+                            st.json(json.loads(response["answer"]))
+                        except ValueError:
+                            st.text(response["answer"])
+
                         st.markdown(constants.TAB_FORM_FULL_PROMPT)
                         st.code(
                             prompt.format(context=[d.page_content for d in docs][0], input=human_message),
@@ -284,9 +302,6 @@ def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmb
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
-
-        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
-            st.markdown(read_md_file("markdowns/stats-description.md"))
 
 
 def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureChatOpenAI) -> None:
@@ -379,9 +394,6 @@ def create_ner_few_shot_prompting_tab(ner_few_shot_prompting: str, llm: AzureCha
                         st.text(callbacks)
                         create_success_toast()
 
-        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
-            st.markdown(read_md_file("markdowns/stats-description.md"))
-
 
 def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureChatOpenAI) -> None:
     with ner_zero_shot_prompting:
@@ -438,9 +450,6 @@ def create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting: str, llm: AzureC
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
-
-        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
-            st.markdown(read_md_file("markdowns/stats-description.md"))
 
 
 def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpenAI) -> None:
@@ -509,18 +518,60 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpe
                         height=25
                     )
 
+                st.subheader("Below fields can be empty. They are optional.")
+                col4, col5, col6 = st.columns(3)
+
+                with col4:
+                    st.subheader("Fourth example")
+                    human_message_4 = st.text_area(
+                        label=constants.TAB_FORM_HUMAN_MESSAGE,
+                        placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_1,
+                        height=200
+                    )
+                    ai_message_4 = st.text_area(
+                        label=constants.TAB_FORM_AI_MESSAGE,
+                        placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_1,
+                        height=25
+                    )
+
+                with col5:
+                    st.subheader("Fifth example")
+                    human_message_5 = st.text_area(
+                        label=constants.TAB_FORM_HUMAN_MESSAGE,
+                        placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_2,
+                        height=200
+                    )
+                    ai_message_5 = st.text_area(
+                        label=constants.TAB_FORM_AI_MESSAGE,
+                        placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_2,
+                        height=25
+                    )
+
+                with col6:
+                    st.subheader("Sixth example")
+                    human_message_6 = st.text_area(
+                        label=constants.TAB_FORM_HUMAN_MESSAGE,
+                        placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_3,
+                        height=200
+                    )
+                    ai_message_6 = st.text_area(
+                        label=constants.TAB_FORM_AI_MESSAGE,
+                        placeholder=constants.FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_3,
+                        height=25
+                    )
+
                 st.subheader("Actual email")
-                human_message_4 = st.text_area(
+                human_message_7 = st.text_area(
                     label=constants.TAB_FORM_HUMAN_MESSAGE,
-                    value=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_4,
-                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_4,
+                    value=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_7,
+                    placeholder=constants.FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_7,
                     height=200
                 )
                 submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
 
                 if submitted:
                     if is_any_field_empty([system_message, human_message_1, ai_message_1, human_message_2, ai_message_2,
-                                           human_message_3, ai_message_3, human_message_4]):
+                                           human_message_3, ai_message_3, human_message_7]):
                         st.warning(constants.TAB_FORM_EMPTY_FIELD_WARNING)
                         st.stop()
 
@@ -532,9 +583,17 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpe
                             HumanMessage(human_message_2),
                             AIMessage(ai_message_2),
                             HumanMessage(human_message_3),
-                            AIMessage(ai_message_3),
-                            HumanMessage(human_message_4)
+                            AIMessage(ai_message_3)
                         ])
+
+                        if human_message_4 and ai_message_4:
+                            prompt += HumanMessage(human_message_4) + AIMessage(ai_message_4)
+                        if human_message_5 and ai_message_5:
+                            prompt += HumanMessage(human_message_5) + AIMessage(ai_message_5)
+                        if human_message_6 and ai_message_6:
+                            prompt += HumanMessage(human_message_6) + AIMessage(ai_message_6)
+
+                        prompt += HumanMessage(human_message_7)
                         chain = prompt | llm
 
                         with st.spinner("Generating response..."):
@@ -555,6 +614,27 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpe
 
         with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/stats-description.md"))
+
+            iris = datasets.load_iris()
+            X = iris.data
+            y = iris.target
+            class_names = iris.target_names
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            classifier = svm.SVC(kernel="linear", C=0.01).fit(X_train, y_train)
+
+            np.set_printoptions(precision=2)
+
+            disp = ConfusionMatrixDisplay.from_estimator(
+                classifier,
+                X_test,
+                y_test,
+                display_labels=class_names,
+                cmap=plt.cm.Reds
+            )
+
+            disp.ax_.set_title("Confusion matrix, without normalization")
+            plt.rcParams["figure.figsize"] = (6, 3)
+            st.pyplot(plt, use_container_width=False)
 
 
 def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatOpenAI) -> None:
@@ -611,44 +691,6 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatO
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
-
-        with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
-            st.markdown(read_md_file("markdowns/stats-description.md"))
-
-            # import some data to play with
-            iris = datasets.load_iris()
-            X = iris.data
-            y = iris.target
-            class_names = iris.target_names
-
-            # Split the data into a training set and a test set
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
-            # Run classifier, using a model that is too regularized (C too low) to see
-            # the impact on the results
-            classifier = svm.SVC(kernel="linear", C=0.01).fit(X_train, y_train)
-
-            np.set_printoptions(precision=2)
-
-            # Plot non-normalized confusion matrix
-            titles_options = [
-                ("Confusion matrix, without normalization", None),
-                ("Normalized confusion matrix", "true"),
-            ]
-            for title, normalize in titles_options:
-                disp = ConfusionMatrixDisplay.from_estimator(
-                    classifier,
-                    X_test,
-                    y_test,
-                    display_labels=class_names,
-                    cmap=plt.cm.Blues,
-                    normalize=normalize,
-                )
-                disp.ax_.set_title(title)
-
-                plt.rcParams["figure.figsize"] = (6, 3)
-
-            st.pyplot(plt, use_container_width=False)
 
 
 def create_success_toast() -> None:

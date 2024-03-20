@@ -40,7 +40,7 @@ HOW_TO_START_EXPANDER = "**How to start?** :thinking_face:"
 
 IMPORTANT_FILES_EXPANDER = "**Important files** :open_file_folder:"
 
-DATASET_EXPANDER = "**Dataset** :bar_chart:"
+DATASETS_EXPANDER = "**Datasets** :bar_chart:"
 
 MAIN_MENU_ABOUT = "This app allows you to test different prompt techniques for the LLM model."
 
@@ -211,7 +211,7 @@ Date: 2024-02-11 09:30"""
 
 FEW_SHOT_PROMPTING_TAB_AI_MESSAGE_3 = """{"from_address": "2132 Thomas Street, Wheeling, US", "to_address": ""}"""
 
-FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_4 = """Hello,
+FEW_SHOT_PROMPTING_TAB_HUMAN_MESSAGE_7 = """Hello,
 Please send me your offer for groupage transport for:
 1 pallet: 120cm x 80cm x 120cm - weight approx 155 Kg
 Loading: 300283 Timisoara, Romania
