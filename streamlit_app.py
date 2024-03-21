@@ -1,8 +1,8 @@
 import json
+import os.path
 import re
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import streamlit as st
 import streamlit_authenticator as stauth
@@ -18,9 +18,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain_text_splitters import MarkdownHeaderTextSplitter
-from sklearn import datasets, svm
-from sklearn.metrics import ConfusionMatrixDisplay
-from sklearn.model_selection import train_test_split
+from pycm import ConfusionMatrix
 from yaml.loader import SafeLoader
 
 import constants
@@ -75,7 +73,7 @@ def create_main_page() -> None:
         st.title(constants.MAIN_PAGE_HEADER)
 
     with col2:
-        annotated_text(annotation("version", "0.0.4", "#FFAAAA", font_size="1.5rem", float="right"))
+        annotated_text(annotation("version", "0.0.4", "#FF4B4B", font_size="1.5rem", float="right", color="#FFFFFF"))
 
     with st.expander(constants.HOW_TO_START_EXPANDER):
         st.markdown(read_md_file("markdowns/how-to-start-description.md"))
@@ -86,11 +84,11 @@ def create_main_page() -> None:
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            with open("important-files/example_markdown_rag.md", "r", encoding="utf-8") as file:
+            with open("important-files/example-markdown-rag.md", "r", encoding="utf-8") as file:
                 st.download_button(
                     label="Example .md file (RAG) :bookmark_tabs:",
                     data=file,
-                    file_name="example_markdown_rag.md",
+                    file_name="example-markdown-rag.md",
                     mime="text/markdown"
                 )
             st.caption("Download the example .md file to use it in the RAG tab")
@@ -104,6 +102,15 @@ def create_main_page() -> None:
                     mime="application/vnd.ms-excel"
                 )
             st.caption("Download dataset file with sample emails")
+
+            with open("important-files/confusion-matrix.xlsx", "rb") as file:
+                st.download_button(
+                    label="Confusion Matrix .xlsx file :bar_chart:",
+                    data=file,
+                    file_name="confusion-matrix.xlsx",
+                    mime="application/vnd.ms-excel"
+                )
+            st.caption("Download confusion matrix file")
 
         with col3:
             with open("important-files/email-2-quote-openapi.json", "r", encoding="utf-8") as file:
@@ -620,27 +627,7 @@ def create_few_shot_prompting_tab(few_shot_prompting_tab: str, llm: AzureChatOpe
 
         with st.expander(constants.TAB_STATS_EXPANDER_TEXT):
             st.markdown(read_md_file("markdowns/stats-description.md"))
-
-            iris = datasets.load_iris()
-            X = iris.data
-            y = iris.target
-            class_names = iris.target_names
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-            classifier = svm.SVC(kernel="linear", C=0.01).fit(X_train, y_train)
-
-            np.set_printoptions(precision=2)
-
-            disp = ConfusionMatrixDisplay.from_estimator(
-                classifier,
-                X_test,
-                y_test,
-                display_labels=class_names,
-                cmap=plt.cm.Reds
-            )
-
-            disp.ax_.set_title("Confusion matrix, without normalization")
-            plt.rcParams["figure.figsize"] = (6, 3)
-            st.pyplot(plt, use_container_width=False)
+            create_stats("few-shot-prompting")
 
 
 def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatOpenAI) -> None:
@@ -697,6 +684,58 @@ def create_zero_shot_prompting_tab(zero_shot_prompting_tab: str, llm: AzureChatO
                         st.markdown(constants.TAB_FORM_REQUEST_STATS)
                         st.text(callbacks)
                         create_success_toast()
+
+
+def create_stats(approach: str):
+    data = pd.read_excel("important-files/confusion-matrix.xlsx", sheet_name=f"{approach}-cm")
+    result = {}
+    for index, row in data.iterrows():
+        result.update({row['field_name']: {'origin_location': row['origin_location'],
+                                           'destination_location': row['destination_location'],
+                                           'currency': row['currency'], 'distance': row['distance'],
+                                           'transport_type': row['transport_type'],
+                                           'trailer_type': row['trailer_type'],
+                                           'dangerous_hazardous': row['dangerous_hazardous'],
+                                           'cargo_type': row['cargo_type'], 'steps': row['steps'],
+                                           'validity_date': row['validity_date'],
+                                           'loading_date': row['loading_date'],
+                                           'arrival_date': row['arrival_date'], 'weight': row['weight'],
+                                           'volume': row['volume'], 'pallets': row['pallets'],
+                                           'vehicle_loading_method': row['vehicle_loading_method'],
+                                           'temperature_requirements': row['temperature_requirements'],
+                                           'seals': row['seals'], 'others': row['others']}})
+    cm = ConfusionMatrix(matrix=result)
+
+    if not os.path.exists(f"stats/{approach}-stat.pycm"):
+        cm.save_stat(
+            f"stats/{approach}-stat",
+            overall_param=["ACC Macro", "F1 Macro", "Kappa", "NPV Macro", "Overall ACC", "PPV Macro",
+                           "SOA1(Landis & Koch)",
+                           "TPR Macro", "zero-one Loss"],
+            class_param=["ACC", "AUC", "AUCI", "F1", "FN", "FP", "FPR", "N", "P", "POP", "PPV", "TN", "TON", "TOP",
+                         "TP",
+                         "TPR"]
+        )
+
+    col1, col2 = st.columns(2, gap="large")
+
+    with col1:
+        st.subheader("Class statistics")
+        st.dataframe(
+            pd.read_excel(f"stats/{approach}-stat-class.xlsx").astype(str), hide_index=True,
+            use_container_width=True
+        )
+
+    with col2:
+        st.subheader("Overall statistics")
+        st.dataframe(
+            pd.read_excel(f"stats/{approach}-stat-overall.xlsx").astype(str), hide_index=True,
+            use_container_width=True
+        )
+
+    cm.plot(cmap=plt.cm.Reds, number_label=True, plot_lib="matplotlib")
+    plt.xticks(rotation=90)
+    st.pyplot(plt, use_container_width=False)
 
 
 def create_success_toast() -> None:
