@@ -34,6 +34,7 @@ def main() -> None:
     embedding_llm = create_azure_openai_embedding_model(openai_api_key_secret)
 
     hide_sidebar()
+    create_version_label()
 
     authenticator = create_authenticator()
     create_login_page(authenticator)
@@ -67,13 +68,7 @@ def create_login_page(authenticator: stauth.Authenticate) -> None:
 
 
 def create_main_page() -> None:
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.title(constants.MAIN_PAGE_HEADER)
-
-    with col2:
-        annotated_text(annotation("version", "0.0.4", "#FF4B4B", font_size="1.5rem", float="right", color="#FFFFFF"))
+    st.title(constants.MAIN_PAGE_HEADER)
 
     with st.expander(constants.HOW_TO_START_EXPANDER):
         st.markdown(read_md_file("markdowns/how-to-start-description.md"))
@@ -146,6 +141,10 @@ def create_main_page() -> None:
 
         df_objects = pd.read_excel("important-files/email-2-quote-dataset.xlsx", "objects").astype(str)
         st.dataframe(df_objects, use_container_width=True)
+
+
+def create_version_label():
+    annotated_text(annotation("version", "0.0.6", "#FF4B4B", font_size="1.5rem", float="right", color="#FFFFFF"))
 
 
 def create_sidebar() -> None:
