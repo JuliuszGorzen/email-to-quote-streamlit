@@ -6,7 +6,7 @@ credentials:
       name: Generative AI User
       password: $2b$12$OHWQbZ67ItYslK/dnv8xX.Bx5BCDIrq2YVe7Ma9p6xeaCRNgJ5V36
 cookie:
-  expiry_days: 1
+  expiry_days: 3
   key: MJXEdgpQ2K
   name: streamlit_email_to_quote
 preauthorized:

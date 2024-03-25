@@ -1,0 +1,375 @@
+Matrix : 
+
+Predict                        arrival_date                   cargo_type                     currency                       dangerous_hazardous            destination_location           distance                       loading_date                   origin_location                others                         pallets                        seals                          steps                          temperature_requirements       trailer_type                   transport_type                 validity_date                  vehicle_loading_method         volume                         weight                         
+Actual
+arrival_date                   52                             0                              0                              0                              0                              0                              0                              0                              1                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+cargo_type                     0                              50                             0                              0                              0                              0                              0                              0                              3                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+currency                       0                              0                              53                             0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+dangerous_hazardous            0                              0                              0                              53                             0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+destination_location           0                              0                              0                              0                              51                             0                              0                              0                              2                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+distance                       0                              0                              0                              0                              0                              53                             0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+loading_date                   0                              0                              0                              0                              0                              0                              38                             0                              15                             0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+origin_location                0                              0                              0                              0                              0                              0                              0                              52                             1                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+others                         0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+pallets                        0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              0                              0                              0                              0                              0                              0                              0                              0                              
+
+seals                          0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              0                              0                              0                              0                              0                              0                              0                              
+
+steps                          0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              0                              0                              0                              0                              0                              0                              
+
+temperature_requirements       0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              0                              0                              0                              0                              0                              
+
+trailer_type                   0                              0                              0                              0                              0                              0                              0                              0                              10                             0                              0                              0                              0                              43                             0                              0                              0                              0                              0                              
+
+transport_type                 0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              0                              0                              0                              
+
+validity_date                  0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              0                              0                              
+
+vehicle_loading_method         0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              0                              
+
+volume                         0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             0                              
+
+weight                         0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              0                              53                             
+
+
+
+Normalized Matrix : 
+
+Predict                        arrival_date                   cargo_type                     currency                       dangerous_hazardous            destination_location           distance                       loading_date                   origin_location                others                         pallets                        seals                          steps                          temperature_requirements       trailer_type                   transport_type                 validity_date                  vehicle_loading_method         volume                         weight                         
+Actual
+arrival_date                   0.98113                        0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.01887                        0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+cargo_type                     0.0                            0.9434                         0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0566                         0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+currency                       0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+dangerous_hazardous            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+destination_location           0.0                            0.0                            0.0                            0.0                            0.96226                        0.0                            0.0                            0.0                            0.03774                        0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+distance                       0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+loading_date                   0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.71698                        0.0                            0.28302                        0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+origin_location                0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.98113                        0.01887                        0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+others                         0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+pallets                        0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+seals                          0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+steps                          0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+temperature_requirements       0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            
+
+trailer_type                   0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.18868                        0.0                            0.0                            0.0                            0.0                            0.81132                        0.0                            0.0                            0.0                            0.0                            0.0                            
+
+transport_type                 0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            0.0                            
+
+validity_date                  0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            0.0                            
+
+vehicle_loading_method         0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            0.0                            
+
+volume                         0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            0.0                            
+
+weight                         0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            0.0                            1.0                            
+
+
+
+Overall Statistics : 
+
+95% CI                                                            (0.95503,0.97788)
+ACC Macro                                                         0.99647
+ARI                                                               0.96309
+AUNP                                                              None
+AUNU                                                              None
+Bangdiwala B                                                      0.97225
+Bennett S                                                         0.96459
+CBA                                                               0.91559
+CSI                                                               None
+Chi-Squared                                                       None
+Chi-Squared DF                                                    324
+Conditional Entropy                                               0.13189
+Cramer V                                                          None
+Cross Entropy                                                     4.22416
+F1 Macro                                                          0.92966
+F1 Micro                                                          0.96646
+FNR Macro                                                         None
+FNR Micro                                                         0.03354
+FPR Macro                                                         0.00177
+FPR Micro                                                         0.00186
+Gwet AC1                                                          0.9646
+Hamming Loss                                                      0.03354
+Joint Entropy                                                     4.30181
+KL Divergence                                                     None
+Kappa                                                             0.96455
+Kappa 95% CI                                                      (0.95248,0.97663)
+Kappa No Prevalence                                               0.93291
+Kappa Standard Error                                              0.00616
+Kappa Unbiased                                                    0.96454
+Krippendorff Alpha                                                0.96456
+Lambda A                                                          0.98113
+Lambda B                                                          0.96448
+Mutual Information                                                4.10554
+NIR                                                               0.05556
+NPV Macro                                                         0.99815
+NPV Micro                                                         0.99814
+Overall ACC                                                       0.96646
+Overall CEN                                                       0.01756
+Overall J                                                         (17.39623,0.91559)
+Overall MCC                                                       0.96532
+Overall MCEN                                                      0.02867
+Overall RACC                                                      0.05369
+Overall RACCU                                                     0.05407
+P-Value                                                           0.0
+PPV Macro                                                         0.94737
+PPV Micro                                                         0.96646
+Pearson C                                                         None
+Phi-Squared                                                       None
+RCI                                                               0.98456
+RR                                                                50.21053
+Reference Entropy                                                 4.16993
+Response Entropy                                                  4.23743
+SOA1(Landis & Koch)                                               Almost Perfect
+SOA2(Fleiss)                                                      Excellent
+SOA3(Altman)                                                      Very Good
+SOA4(Cicchetti)                                                   Excellent
+SOA5(Cramer)                                                      None
+SOA6(Matthews)                                                    Very Strong
+SOA7(Lambda A)                                                    Very Strong
+SOA8(Lambda B)                                                    Very Strong
+SOA9(Krippendorff Alpha)                                          High
+SOA10(Pearson C)                                                  None
+Scott PI                                                          0.96454
+Standard Error                                                    0.00583
+TNR Macro                                                         0.99823
+TNR Micro                                                         0.99814
+TPR Macro                                                         None
+TPR Micro                                                         0.96646
+Zero-one Loss                                                     32
+
+Class Statistics :
+
+Classes                                                           arrival_date                 cargo_type                   currency                     dangerous_hazardous          destination_location         distance                     loading_date                 origin_location              others                       pallets                      seals                        steps                        temperature_requirements     trailer_type                 transport_type               validity_date                vehicle_loading_method       volume                       weight                       
+ACC(Accuracy)                                                     0.99895                      0.99686                      1.0                          1.0                          0.9979                       1.0                          0.98428                      0.99895                      0.96646                      1.0                          1.0                          1.0                          1.0                          0.98952                      1.0                          1.0                          1.0                          1.0                          1.0                          
+AUC(Area under the ROC curve)                                     0.99057                      0.9717                       1.0                          1.0                          0.98113                      1.0                          0.85849                      0.99057                      None                         1.0                          1.0                          1.0                          1.0                          0.90566                      1.0                          1.0                          1.0                          1.0                          1.0                          
+AUCI(AUC value interpretation)                                    Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    Very Good                    Excellent                    None                         Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    Excellent                    
+F1(F1 score - harmonic mean of precision and sensitivity)         0.99048                      0.97087                      1.0                          1.0                          0.98077                      1.0                          0.83516                      0.99048                      0.0                          1.0                          1.0                          1.0                          1.0                          0.89583                      1.0                          1.0                          1.0                          1.0                          1.0                          
+FN(False negative/miss/type 2 error)                              1                            3                            0                            0                            2                            0                            15                           1                            0                            0                            0                            0                            0                            10                           0                            0                            0                            0                            0                            
+FP(False positive/type 1 error/false alarm)                       0                            0                            0                            0                            0                            0                            0                            0                            32                           0                            0                            0                            0                            0                            0                            0                            0                            0                            0                            
+FPR(Fall-out or false positive rate)                              0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          0.03354                      0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          0.0                          
+N(Condition negative)                                             901                          901                          901                          901                          901                          901                          901                          901                          954                          901                          901                          901                          901                          901                          901                          901                          901                          901                          901                          
+P(Condition positive or support)                                  53                           53                           53                           53                           53                           53                           53                           53                           0                            53                           53                           53                           53                           53                           53                           53                           53                           53                           53                           
+POP(Population)                                                   954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          954                          
+PPV(Precision or positive predictive value)                       1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          0.0                          1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          1.0                          
+TN(True negative/correct rejection)                               901                          901                          901                          901                          901                          901                          901                          901                          922                          901                          901                          901                          901                          901                          901                          901                          901                          901                          901                          
+TON(Test outcome negative)                                        902                          904                          901                          901                          903                          901                          916                          902                          922                          901                          901                          901                          901                          911                          901                          901                          901                          901                          901                          
+TOP(Test outcome positive)                                        52                           50                           53                           53                           51                           53                           38                           52                           32                           53                           53                           53                           53                           43                           53                           53                           53                           53                           53                           
+TP(True positive/hit)                                             52                           50                           53                           53                           51                           53                           38                           52                           0                            53                           53                           53                           53                           43                           53                           53                           53                           53                           53                           
+TPR(Sensitivity, recall, hit rate, or true positive rate)         0.98113                      0.9434                       1.0                          1.0                          0.96226                      1.0                          0.71698                      0.98113                      None                         1.0                          1.0                          1.0                          1.0                          0.81132                      1.0                          1.0                          1.0                          1.0                          1.0                          
+
+One-Vs-All : 
+
+arrival_date-Vs-All : 
+
+Predict            arrival_date       ~                  
+Actual
+arrival_date       52                 1                  
+
+~                  0                  901                
+
+
+
+cargo_type-Vs-All : 
+
+Predict          cargo_type       ~                
+Actual
+cargo_type       50               3                
+
+~                0                901              
+
+
+
+currency-Vs-All : 
+
+Predict        currency       ~              
+Actual
+currency       53             0              
+
+~              0              901            
+
+
+
+dangerous_hazardous-Vs-All : 
+
+Predict                   dangerous_hazardous       ~                         
+Actual
+dangerous_hazardous       53                        0                         
+
+~                         0                         901                       
+
+
+
+destination_location-Vs-All : 
+
+Predict                    destination_location       ~                          
+Actual
+destination_location       51                         2                          
+
+~                          0                          901                        
+
+
+
+distance-Vs-All : 
+
+Predict        distance       ~              
+Actual
+distance       53             0              
+
+~              0              901            
+
+
+
+loading_date-Vs-All : 
+
+Predict            loading_date       ~                  
+Actual
+loading_date       38                 15                 
+
+~                  0                  901                
+
+
+
+origin_location-Vs-All : 
+
+Predict               origin_location       ~                     
+Actual
+origin_location       52                    1                     
+
+~                     0                     901                   
+
+
+
+others-Vs-All : 
+
+Predict      others       ~            
+Actual
+others       0            0            
+
+~            32           922          
+
+
+
+pallets-Vs-All : 
+
+Predict       pallets       ~             
+Actual
+pallets       53            0             
+
+~             0             901           
+
+
+
+seals-Vs-All : 
+
+Predict     seals       ~           
+Actual
+seals       53          0           
+
+~           0           901         
+
+
+
+steps-Vs-All : 
+
+Predict     steps       ~           
+Actual
+steps       53          0           
+
+~           0           901         
+
+
+
+temperature_requirements-Vs-All : 
+
+Predict                        temperature_requirements       ~                              
+Actual
+temperature_requirements       53                             0                              
+
+~                              0                              901                            
+
+
+
+trailer_type-Vs-All : 
+
+Predict            trailer_type       ~                  
+Actual
+trailer_type       43                 10                 
+
+~                  0                  901                
+
+
+
+transport_type-Vs-All : 
+
+Predict              transport_type       ~                    
+Actual
+transport_type       53                   0                    
+
+~                    0                    901                  
+
+
+
+validity_date-Vs-All : 
+
+Predict             validity_date       ~                   
+Actual
+validity_date       53                  0                   
+
+~                   0                   901                 
+
+
+
+vehicle_loading_method-Vs-All : 
+
+Predict                      vehicle_loading_method       ~                            
+Actual
+vehicle_loading_method       53                           0                            
+
+~                            0                            901                          
+
+
+
+volume-Vs-All : 
+
+Predict      volume       ~            
+Actual
+volume       53           0            
+
+~            0            901          
+
+
+
+weight-Vs-All : 
+
+Predict      weight       ~            
+Actual
+weight       53           0            
+
+~            0            901          
+
+
+
+
+Warning : The confusion matrix is a high dimension matrix and won't be demonstrated properly.
+If confusion matrix has too many zeros (sparse matrix) you can set `sparse` flag to True in printing functions otherwise by using save_csv method to save the confusion matrix in csv format you'll have better demonstration.

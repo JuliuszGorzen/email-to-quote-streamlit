@@ -96,6 +96,8 @@ TAB_NAME_NER_FEW_SHOT_PROMPTING = "NER + Few-shot Prompting :writing_hand::heavy
 
 TAB_NAME_RAG = "RAG :bookmark_tabs:"
 
+TAB_NAME_TEST_PROMPT = "Test your prompt :test_tube::dna::pencil2:"
+
 TAB_DESCRIPTION_EXPANDER_TEXT = "**Description** :pencil2:"
 
 TAB_EXAMPLE_EXPANDER_TEXT = "**See example** :eyes:"
@@ -109,6 +111,8 @@ TAB_FORM_SYSTEM_MESSAGE = "Enter system message:"
 TAB_FORM_HUMAN_MESSAGE = "Enter human message:"
 
 TAB_FORM_AI_MESSAGE = "Enter AI message:"
+
+TAB_FORM_PROMPT_MESSAGE = "Enter your prompt:"
 
 TAB_FORM_FILE = "External file from the which the content will be taken:"
 
@@ -312,3 +316,10 @@ RAG_TAB_SYSTEM_MESSAGE = """You are a bot that answers the following question ba
 """
 
 RAG_TAB_HUMAN_MESSAGE = "Which entities are related to the location. List all with the descriptions."
+
+# --- TEST PROMPT TAB ---
+TEST_PROMPT_TAB_HEADER = "**Test your prompt** :test_tube::dna::pencil2:"
+
+TEST_PROMPT_TAB_FORM_HEADER = "Try your prompt"
+
+TEST_PROMPT_TAB_PROMPT = "System: You are a bot that..."

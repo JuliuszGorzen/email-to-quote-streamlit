@@ -1,8 +1,13 @@
+import datetime
 import json
+import math
 import os.path
 import re
+from collections import Counter
 
 import matplotlib.pyplot as plt
+import numpy as np
+import openpyxl
 import pandas as pd
 import streamlit as st
 import streamlit_authenticator as stauth
@@ -219,13 +224,14 @@ def create_sidebar() -> None:
 
 
 def create_tabs(llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> None:
-    zero_shot_prompting_tab, few_shot_prompting_tab, ner_zero_shot_prompting, ner_few_shot_prompting, rag = st.tabs(
+    zero_shot_prompting_tab, few_shot_prompting_tab, ner_zero_shot_prompting, ner_few_shot_prompting, rag, test_prompt = st.tabs(
         [
             constants.TAB_NAME_ZERO_SHOT_PROMPTING,
             constants.TAB_NAME_FEW_SHOT_PROMPTING,
             constants.TAB_NAME_NER_ZERO_SHOT_PROMPTING,
             constants.TAB_NAME_NER_FEW_SHOT_PROMPTING,
-            constants.TAB_NAME_RAG
+            constants.TAB_NAME_RAG,
+            constants.TAB_NAME_TEST_PROMPT
         ])
 
     create_zero_shot_prompting_tab(zero_shot_prompting_tab, llm)
@@ -233,6 +239,78 @@ def create_tabs(llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> N
     create_ner_zero_shot_prompting_tab(ner_zero_shot_prompting, llm)
     create_ner_few_shot_prompting_tab(ner_few_shot_prompting, llm)
     create_rag_tab(rag, llm, embedding_llm)
+    create_test_prompt_tab(test_prompt, llm)
+
+
+def create_test_prompt_tab(test_prompt: str, llm: AzureChatOpenAI) -> None:
+    with test_prompt:
+        st.header(constants.TEST_PROMPT_TAB_HEADER)
+
+        st.warning(":building_construction: This tab is under construction. It doesn't work properly yet. "
+                   ":building_construction:")
+
+        with st.expander(constants.TAB_DESCRIPTION_EXPANDER_TEXT, expanded=True):
+            st.markdown(read_md_file("markdowns/test-your-prompt-description.md"))
+
+        with st.form("test_your_prompt_form"):
+            st.header(constants.TEST_PROMPT_TAB_FORM_HEADER)
+
+            df_emails = pd.read_excel("important-files/email-2-quote-dataset.xlsx", "mails")
+            st.dataframe(df_emails, use_container_width=True, height=200)
+
+            prompt_text = st.text_area(
+                label=constants.TAB_FORM_PROMPT_MESSAGE,
+                placeholder=constants.TEST_PROMPT_TAB_PROMPT,
+                height=200
+            )
+
+            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
+
+            if submitted:
+                if prompt_text == "":
+                    st.warning("Fill in the prompt field!")
+                    st.stop()
+
+                with st.status("Calculating... :abacus:", expanded=True):
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+                    st.write("Running prompt against dataset... :running:")
+                    # prompt_parts = re.split("System:|Human:|AI:", prompt_text)
+                    # filter(None, prompt_parts)
+                    # emails_to_predict = df_emails["llm_input"].to_list()
+                    # llm_responses = []
+                    #
+                    # for email in emails_to_predict:
+                    #     prompt = ChatPromptTemplate.from_messages([
+                    #         SystemMessage(prompt_parts[0]),
+                    #         HumanMessage(prompt_parts[1]),
+                    #         AIMessage(prompt_parts[2]),
+                    #         HumanMessage(prompt_parts[3]),
+                    #         AIMessage(prompt_parts[4]),
+                    #         HumanMessage(prompt_parts[5]),
+                    #         AIMessage(prompt_parts[6]),
+                    #         HumanMessage(email)
+                    #     ])
+                    #     chain = prompt | llm
+                    #     response = chain.invoke({})
+                    #
+                    #     llm_responses.append(response.content)
+                    #
+                    #     for response in llm_responses:
+                    #         json_response: str
+                    #         try:
+                    #             response = json.loads(response)
+                    #         except json.JSONDecodeError:
+                    #             response = ""
+                    #
+                    #         if not any(col in response for col in df_emails.columns):
+                    #             llm_responses.remove(response)
+
+                    st.write("Preparing data... :eyes:")
+                    create_sheet_for_cm("actual", "few-shot-prompting-predicted", timestamp)
+
+                    st.write("Preparing confusion matrix... :bar_chart:")
+                    create_cm(timestamp)
 
 
 def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> None:
@@ -689,31 +767,38 @@ def create_stats(approach: str):
     data = pd.read_excel("important-files/confusion-matrix.xlsx", sheet_name=f"{approach}-cm")
     result = {}
     for index, row in data.iterrows():
-        result.update({row['field_name']: {'origin_location': row['origin_location'],
-                                           'destination_location': row['destination_location'],
-                                           'currency': row['currency'], 'distance': row['distance'],
-                                           'transport_type': row['transport_type'],
-                                           'trailer_type': row['trailer_type'],
-                                           'dangerous_hazardous': row['dangerous_hazardous'],
-                                           'cargo_type': row['cargo_type'], 'steps': row['steps'],
-                                           'validity_date': row['validity_date'],
-                                           'loading_date': row['loading_date'],
-                                           'arrival_date': row['arrival_date'], 'weight': row['weight'],
-                                           'volume': row['volume'], 'pallets': row['pallets'],
-                                           'vehicle_loading_method': row['vehicle_loading_method'],
-                                           'temperature_requirements': row['temperature_requirements'],
-                                           'seals': row['seals'], 'others': row['others']}})
+        result.update({
+            row['field_name']: {
+                'origin_location': row['origin_location'],
+                'destination_location': row['destination_location'],
+                'currency': row['currency'],
+                'distance': row['distance'],
+                'transport_type': row['transport_type'],
+                'trailer_type': row['trailer_type'],
+                'dangerous_hazardous': row['dangerous_hazardous'],
+                'cargo_type': row['cargo_type'],
+                'steps': row['steps'],
+                'validity_date': row['validity_date'],
+                'loading_date': row['loading_date'],
+                'arrival_date': row['arrival_date'],
+                'weight': row['weight'],
+                'volume': row['volume'],
+                'pallets': row['pallets'],
+                'vehicle_loading_method': row['vehicle_loading_method'],
+                'temperature_requirements': row['temperature_requirements'],
+                'seals': row['seals'],
+                'others': row['others']
+            }
+        })
     cm = ConfusionMatrix(matrix=result)
 
     if not os.path.exists(f"stats/{approach}-stat.pycm"):
         cm.save_stat(
             f"stats/{approach}-stat",
             overall_param=["ACC Macro", "F1 Macro", "Kappa", "NPV Macro", "Overall ACC", "PPV Macro",
-                           "SOA1(Landis & Koch)",
-                           "TPR Macro", "zero-one Loss"],
+                           "SOA1(Landis & Koch)", "TPR Macro", "zero-one Loss"],
             class_param=["ACC", "AUC", "AUCI", "F1", "FN", "FP", "FPR", "N", "P", "POP", "PPV", "TN", "TON", "TOP",
-                         "TP",
-                         "TPR"]
+                         "TP", "TPR"]
         )
 
     col1, col2 = st.columns(2, gap="large")
@@ -735,6 +820,135 @@ def create_stats(approach: str):
     cm.plot(cmap=plt.cm.Reds, number_label=True, plot_lib="matplotlib")
     plt.xticks(rotation=90)
     st.pyplot(plt, use_container_width=False)
+
+
+def get_cosine_similarity(vec1: Counter, vec2: Counter) -> float:
+    intersection = set(vec1.keys()) & set(vec2.keys())
+    numerator = sum([vec1[x] * vec2[x] for x in intersection])
+
+    sum1 = sum([vec1[x] ** 2 for x in list(vec1.keys())])
+    sum2 = sum([vec2[x] ** 2 for x in list(vec2.keys())])
+    denominator = math.sqrt(sum1) * math.sqrt(sum2)
+
+    if not denominator:
+        return 0.0
+    else:
+        return float(numerator) / denominator
+
+
+def text_to_vector(text: str) -> Counter:
+    words = re.compile(r"\w+").findall(text)
+    return Counter(words)
+
+
+def create_sheet_for_cm(actual_sheet_name: str, predicted_sheet_name: str, timestamp: str) -> None:
+    actual_dataframe = pd.read_excel("important-files/confusion-matrix.xlsx", actual_sheet_name)
+    predicted_dataframe = pd.read_excel("important-files/confusion-matrix.xlsx", predicted_sheet_name)
+    diff_dataframe = predicted_dataframe[predicted_dataframe != actual_dataframe]
+    differences = {}
+
+    for row_index in range(len(diff_dataframe)):
+        diff_col_and_value = diff_dataframe.iloc[row_index].dropna()
+        col_name = diff_col_and_value.index
+
+        for value in range(len(diff_dataframe.iloc[row_index][col_name].values)):
+            diff_text = str(diff_dataframe.iloc[row_index][col_name].values[value])
+            actual_text = str(actual_dataframe.iloc[row_index][col_name].values[value])
+            diff_vector = text_to_vector(diff_text)
+            actual_vector = text_to_vector(actual_text)
+            cosine = get_cosine_similarity(diff_vector, actual_vector)
+
+            if cosine >= 0.8:
+                differences.update({row_index: diff_text})
+
+    for row_index in differences:
+        for value in predicted_dataframe.iloc[row_index].values:
+            if value == differences[row_index]:
+                column_index = list(predicted_dataframe.iloc[row_index].values).index(value)
+                actual_value = actual_dataframe.iloc[row_index].values[column_index]
+                predicted_dataframe.iloc[row_index, column_index] = actual_value
+
+    with pd.ExcelWriter(
+            "important-files/confusion-matrix.xlsx",
+            mode="a",
+            engine="openpyxl",
+            if_sheet_exists="replace",
+    ) as writer:
+        predicted_dataframe.to_excel(writer, sheet_name=timestamp, index=False)
+
+
+def create_cm(timestamp: str) -> None:
+    confusion_matrix_xlsx = "important-files/confusion-matrix.xlsx"
+    actual_dataframe = pd.read_excel(
+        confusion_matrix_xlsx,
+        sheet_name="actual"
+    )
+    predicted_dataframe = pd.read_excel(
+        confusion_matrix_xlsx,
+        sheet_name=timestamp
+    )
+
+    actual_dataframe = actual_dataframe.drop(["id_from_dataset", "llm_input"], axis=1)
+    predicted_dataframe = predicted_dataframe.drop(["id_from_dataset", "llm_input"], axis=1)
+
+    result_matrix = np.zeros((len(actual_dataframe.columns), len(actual_dataframe.columns)))
+    diagonal = []
+
+    for col in actual_dataframe.columns:
+        match_amount = actual_dataframe[col].isin(predicted_dataframe[col]).value_counts()[True]
+        diagonal.append(match_amount)
+
+    np.fill_diagonal(result_matrix, diagonal)
+    last_column = [row[-1] for row in result_matrix]
+
+    for (index, val) in enumerate(last_column):
+        last_column[index] = len(actual_dataframe) - diagonal[index]
+        result_matrix.itemset((index, -1), last_column[index])
+
+    result = {}
+    for index, row in actual_dataframe.iterrows():
+        if index == 19:
+            break
+        result.update({
+            actual_dataframe.columns.values[index]: {
+                'origin_location': int(result_matrix[index][0]),
+                'destination_location': int(result_matrix[index][1]),
+                'currency': int(result_matrix[index][2]),
+                'distance': int(result_matrix[index][3]),
+                'transport_type': int(result_matrix[index][4]),
+                'trailer_type': int(result_matrix[index][5]),
+                'dangerous_hazardous': int(result_matrix[index][6]),
+                'cargo_type': int(result_matrix[index][7]),
+                'steps': int(result_matrix[index][8]),
+                'validity_date': int(result_matrix[index][9]),
+                'loading_date': int(result_matrix[index][10]),
+                'arrival_date': int(result_matrix[index][11]),
+                'weight': int(result_matrix[index][12]),
+                'volume': int(result_matrix[index][13]),
+                'pallets': int(result_matrix[index][14]),
+                'vehicle_loading_method': int(result_matrix[index][15]),
+                'temperature_requirements': int(result_matrix[index][16]),
+                'seals': int(result_matrix[index][17]),
+                'others': int(result_matrix[index][18])
+            }
+        })
+
+    cm = ConfusionMatrix(matrix=result)
+    cm.plot(cmap=plt.cm.Reds, number_label=True, plot_lib="matplotlib")
+    plt.xticks(rotation=90)
+    st.pyplot(plt, use_container_width=False)
+
+    remove_excel_sheet(confusion_matrix_xlsx, timestamp)
+
+
+def remove_excel_sheet(filename: str, sheet_name: str) -> None:
+    try:
+        work_book = openpyxl.load_workbook(filename)
+        sheet_to_remove = work_book[sheet_name]
+        work_book.remove(sheet_to_remove)
+        work_book.save(filename)
+    except:
+        st.error("Sheet does not exist!")
 
 
 def create_success_toast() -> None:
