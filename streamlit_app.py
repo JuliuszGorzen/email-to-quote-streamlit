@@ -1,4 +1,5 @@
 import datetime
+import io
 import json
 import math
 import os.path
@@ -149,7 +150,7 @@ def create_main_page() -> None:
 
 
 def create_version_label():
-    annotated_text(annotation("version", "0.0.6", "#FF4B4B", font_size="1.5rem", float="right", color="#FFFFFF"))
+    annotated_text(annotation("version", "0.0.7", "#FF4B4B", font_size="1.5rem", float="right", color="#FFFFFF"))
 
 
 def create_sidebar() -> None:
@@ -246,71 +247,128 @@ def create_test_prompt_tab(test_prompt: str, llm: AzureChatOpenAI) -> None:
     with test_prompt:
         st.header(constants.TEST_PROMPT_TAB_HEADER)
 
-        st.warning(":building_construction: This tab is under construction. It doesn't work properly yet. "
-                   ":building_construction:")
-
         with st.expander(constants.TAB_DESCRIPTION_EXPANDER_TEXT, expanded=True):
             st.markdown(read_md_file("markdowns/test-your-prompt-description.md"))
 
-        with st.form("test_your_prompt_form"):
-            st.header(constants.TEST_PROMPT_TAB_FORM_HEADER)
+        with st.expander(constants.TAB_EXAMPLE_EXPANDER_TEXT):
+            col1, col2 = st.columns(2)
 
-            df_emails = pd.read_excel("important-files/email-2-quote-dataset.xlsx", "mails")
-            st.dataframe(df_emails, use_container_width=True, height=200)
+            with col1:
+                st.markdown("Actual")
+                df1 = pd.read_excel("important-files/confusion-matrix.xlsx", "actual").astype(str)
+                st.dataframe(df1, use_container_width=True, height=200)
 
-            prompt_text = st.text_area(
-                label=constants.TAB_FORM_PROMPT_MESSAGE,
-                placeholder=constants.TEST_PROMPT_TAB_PROMPT,
-                height=200
-            )
+            with col2:
+                st.markdown("Predicted")
+                df2 = pd.read_excel("important-files/confusion-matrix.xlsx", "few-shot-prompting-predicted").astype(str)
+                st.dataframe(df2, use_container_width=True, height=200)
 
-            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON)
+            st.markdown("Confusion matrix")
+            df3 = pd.read_excel("important-files/confusion-matrix.xlsx", "few-shot-prompting-cm")
+            st.dataframe(df3, use_container_width=True, height=200)
+
+        with st.form("confusion_matrix_form"):
+            st.header(constants.CONFUSION_MATRIX_FORM_HEADER)
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                excel_file = st.file_uploader(
+                    label=constants.TAB_FORM_EXCEL_FILE,
+                    type=["xlsx"]
+                )
+
+            with col2:
+                actual_sheet_name = st.text_input(
+                    label=constants.TAB_FORM_ACTUAL_SHEET_NAME,
+                    value="actual"
+                )
+
+            with col3:
+                predicted_sheet_name = st.text_input(
+                    label=constants.TAB_FORM_PREDICTED_SHEET_NAME,
+                    value="predicted"
+                )
+
+            submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON_CONFUSION_MATRIX)
 
             if submitted:
-                if prompt_text == "":
-                    st.warning("Fill in the prompt field!")
+                if excel_file is None:
+                    st.warning("Upload an Excel file!")
                     st.stop()
 
-                with st.status("Calculating... :abacus:", expanded=True):
+                if not actual_sheet_name or not predicted_sheet_name:
+                    st.warning("Fill in the sheet names!")
+                    st.stop()
+
+                with st.spinner("Calculating... :abacus:"):
+                    saved_excel_path = save_excel_file(excel_file)
                     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    create_sheet_for_cm(saved_excel_path, actual_sheet_name, predicted_sheet_name, timestamp)
+                    create_cm(saved_excel_path, actual_sheet_name, timestamp)
 
-                    st.write("Running prompt against dataset... :running:")
-                    # prompt_parts = re.split("System:|Human:|AI:", prompt_text)
-                    # filter(None, prompt_parts)
-                    # emails_to_predict = df_emails["llm_input"].to_list()
-                    # llm_responses = []
-                    #
-                    # for email in emails_to_predict:
-                    #     prompt = ChatPromptTemplate.from_messages([
-                    #         SystemMessage(prompt_parts[0]),
-                    #         HumanMessage(prompt_parts[1]),
-                    #         AIMessage(prompt_parts[2]),
-                    #         HumanMessage(prompt_parts[3]),
-                    #         AIMessage(prompt_parts[4]),
-                    #         HumanMessage(prompt_parts[5]),
-                    #         AIMessage(prompt_parts[6]),
-                    #         HumanMessage(email)
-                    #     ])
-                    #     chain = prompt | llm
-                    #     response = chain.invoke({})
-                    #
-                    #     llm_responses.append(response.content)
-                    #
-                    #     for response in llm_responses:
-                    #         json_response: str
-                    #         try:
-                    #             response = json.loads(response)
-                    #         except json.JSONDecodeError:
-                    #             response = ""
-                    #
-                    #         if not any(col in response for col in df_emails.columns):
-                    #             llm_responses.remove(response)
-
-                    st.write("Preparing data... :eyes:")
-                    create_sheet_for_cm("actual", "few-shot-prompting-predicted", timestamp)
-
-                    st.write("Preparing confusion matrix... :bar_chart:")
-                    create_cm(timestamp)
+        # with st.form("test_your_prompt_form"):
+        #     st.header(constants.TEST_PROMPT_TAB_FORM_HEADER)
+        #      st.warning(":building_construction: This form is under construction. It doesn't work properly yet. "
+        #                 ":building_construction:")
+        #
+        #     df_emails = pd.read_excel("important-files/email-2-quote-dataset.xlsx", "mails")
+        #     st.dataframe(df_emails, use_container_width=True, height=200)
+        #
+        #     prompt_text = st.text_area(
+        #         label=constants.TAB_FORM_PROMPT_MESSAGE,
+        #         placeholder=constants.TEST_PROMPT_TAB_PROMPT,
+        #         height=200,
+        #         disabled=True
+        #     )
+        #
+        #     submitted = st.form_submit_button(label=constants.TAB_FORM_SUBMIT_BUTTON, disabled=True)
+        #
+        #     if submitted:
+        #         if prompt_text == "":
+        #             st.warning("Fill in the prompt field!")
+        #             st.stop()
+        #
+        #         with st.status("Calculating... :abacus:", expanded=True):
+        #             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        #
+        #             st.write("Running prompt against dataset... :running:")
+        # prompt_parts = re.split("System:|Human:|AI:", prompt_text)
+        # filter(None, prompt_parts)
+        # emails_to_predict = df_emails["llm_input"].to_list()
+        # llm_responses = []
+        #
+        # for email in emails_to_predict:
+        #     prompt = ChatPromptTemplate.from_messages([
+        #         SystemMessage(prompt_parts[0]),
+        #         HumanMessage(prompt_parts[1]),
+        #         AIMessage(prompt_parts[2]),
+        #         HumanMessage(prompt_parts[3]),
+        #         AIMessage(prompt_parts[4]),
+        #         HumanMessage(prompt_parts[5]),
+        #         AIMessage(prompt_parts[6]),
+        #         HumanMessage(email)
+        #     ])
+        #     chain = prompt | llm
+        #     response = chain.invoke({})
+        #
+        #     llm_responses.append(response.content)
+        #
+        #     for response in llm_responses:
+        #         json_response: str
+        #         try:
+        #             response = json.loads(response)
+        #         except json.JSONDecodeError:
+        #             response = ""
+        #
+        #         if not any(col in response for col in df_emails.columns):
+        #             llm_responses.remove(response)
+        #
+        # st.write("Preparing data... :eyes:")
+        # create_sheet_for_cm("actual", "few-shot-prompting-predicted", timestamp)
+        #
+        # st.write("Preparing confusion matrix... :bar_chart:")
+        # create_cm(timestamp)
 
 
 def create_rag_tab(rag: str, llm: AzureChatOpenAI, embedding_llm: AzureOpenAIEmbeddings) -> None:
@@ -841,9 +899,10 @@ def text_to_vector(text: str) -> Counter:
     return Counter(words)
 
 
-def create_sheet_for_cm(actual_sheet_name: str, predicted_sheet_name: str, timestamp: str) -> None:
-    actual_dataframe = pd.read_excel("important-files/confusion-matrix.xlsx", actual_sheet_name)
-    predicted_dataframe = pd.read_excel("important-files/confusion-matrix.xlsx", predicted_sheet_name)
+def create_sheet_for_cm(saved_excel_path: str, actual_sheet_name: str, predicted_sheet_name: str,
+                        timestamp: str) -> None:
+    actual_dataframe = pd.read_excel(saved_excel_path, actual_sheet_name)
+    predicted_dataframe = pd.read_excel(saved_excel_path, predicted_sheet_name)
     diff_dataframe = predicted_dataframe[predicted_dataframe != actual_dataframe]
     differences = {}
 
@@ -869,22 +928,22 @@ def create_sheet_for_cm(actual_sheet_name: str, predicted_sheet_name: str, times
                 predicted_dataframe.iloc[row_index, column_index] = actual_value
 
     with pd.ExcelWriter(
-            "important-files/confusion-matrix.xlsx",
+            saved_excel_path,
             mode="a",
             engine="openpyxl",
             if_sheet_exists="replace",
     ) as writer:
         predicted_dataframe.to_excel(writer, sheet_name=timestamp, index=False)
+        writer.book.save(filename=saved_excel_path)
 
 
-def create_cm(timestamp: str) -> None:
-    confusion_matrix_xlsx = "important-files/confusion-matrix.xlsx"
+def create_cm(excel_file_path: str, actual_sheet_name: str, timestamp: str) -> None:
     actual_dataframe = pd.read_excel(
-        confusion_matrix_xlsx,
-        sheet_name="actual"
+        excel_file_path,
+        sheet_name=actual_sheet_name
     )
     predicted_dataframe = pd.read_excel(
-        confusion_matrix_xlsx,
+        excel_file_path,
         sheet_name=timestamp
     )
 
@@ -938,7 +997,7 @@ def create_cm(timestamp: str) -> None:
     plt.xticks(rotation=90)
     st.pyplot(plt, use_container_width=False)
 
-    remove_excel_sheet(confusion_matrix_xlsx, timestamp)
+    remove_excel_file(excel_file_path)
 
 
 def remove_excel_sheet(filename: str, sheet_name: str) -> None:
@@ -949,6 +1008,18 @@ def remove_excel_sheet(filename: str, sheet_name: str) -> None:
         work_book.save(filename)
     except:
         st.error("Sheet does not exist!")
+
+
+def remove_excel_file(excel_file_path: str) -> None:
+    if os.path.exists(excel_file_path):
+        os.remove(excel_file_path)
+
+
+def save_excel_file(excel_file) -> str:
+    to_save = openpyxl.load_workbook(io.BytesIO(excel_file.read()))
+    to_save.save(f"uploaded-files/{excel_file.name}")
+    to_save.close()
+    return f"uploaded-files/{excel_file.name}"
 
 
 def create_success_toast() -> None:

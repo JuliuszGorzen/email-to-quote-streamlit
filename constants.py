@@ -323,3 +323,13 @@ TEST_PROMPT_TAB_HEADER = "**Test your prompt** :test_tube::dna::pencil2:"
 TEST_PROMPT_TAB_FORM_HEADER = "Try your prompt"
 
 TEST_PROMPT_TAB_PROMPT = "System: You are a bot that..."
+
+CONFUSION_MATRIX_FORM_HEADER = "Compare results (Confusion Matrix)"
+
+TAB_FORM_ACTUAL_SHEET_NAME = "Sheet name with actual values"
+
+TAB_FORM_PREDICTED_SHEET_NAME = "Sheet name with predicted values"
+
+TAB_FORM_EXCEL_FILE = "Excel file with actual and predicted values"
+
+TAB_FORM_SUBMIT_BUTTON_CONFUSION_MATRIX = "Compare results :bar_chart:"

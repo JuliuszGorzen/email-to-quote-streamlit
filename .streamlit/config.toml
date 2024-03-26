@@ -4,3 +4,6 @@ gatherUsageStats = false
 [server]
 maxUploadSize = 20
 maxMessageSize = 20
+
+[theme]
+base="light"
